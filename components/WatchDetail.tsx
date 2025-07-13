@@ -24,8 +24,7 @@ export default function WatchDetail({ watch }: WatchDetailProps) {
   };
 
   const handleShare = () => {
-    // In a real app, this would use the Share API
-    console.log('Sharing watch:', watch.brand, watch.model);
+    console.log('Compartilhando relógio:', watch.brand, watch.model);
   };
 
   return (
@@ -44,7 +43,7 @@ export default function WatchDetail({ watch }: WatchDetailProps) {
 
         <View style={styles.actions}>
           <Button
-            title={favorite ? "Remove from Favorites" : "Add to Favorites"}
+            title={favorite ? "Remover dos Favoritos" : "Adicionar aos Favoritos"}
             onPress={toggleFavorite}
             variant={favorite ? "outline" : "primary"}
             icon={<Heart size={18} color={favorite ? Colors.primary : Colors.white} fill={favorite ? Colors.primary : 'none'} />}
@@ -55,41 +54,59 @@ export default function WatchDetail({ watch }: WatchDetailProps) {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Description</Text>
+          <Text style={styles.sectionTitle}>Descrição</Text>
           <Text style={styles.description}>{watch.description}</Text>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Specifications</Text>
+          <Text style={styles.sectionTitle}>Especificações</Text>
           <View style={styles.specs}>
             {watch.year && (
               <View style={styles.specItem}>
-                <Text style={styles.specLabel}>Year</Text>
+                <Text style={styles.specLabel}>Ano</Text>
                 <Text style={styles.specValue}>{watch.year}</Text>
               </View>
             )}
             {watch.movement && (
               <View style={styles.specItem}>
-                <Text style={styles.specLabel}>Movement</Text>
+                <Text style={styles.specLabel}>Movimento</Text>
                 <Text style={styles.specValue}>{watch.movement}</Text>
               </View>
             )}
             {watch.caseMaterial && (
               <View style={styles.specItem}>
-                <Text style={styles.specLabel}>Case Material</Text>
+                <Text style={styles.specLabel}>Material da Caixa</Text>
                 <Text style={styles.specValue}>{watch.caseMaterial}</Text>
               </View>
             )}
             {watch.caseSize && (
               <View style={styles.specItem}>
-                <Text style={styles.specLabel}>Case Size</Text>
+                <Text style={styles.specLabel}>Tamanho da Caixa</Text>
                 <Text style={styles.specValue}>{watch.caseSize}</Text>
               </View>
             )}
             {watch.waterResistance && (
               <View style={styles.specItem}>
-                <Text style={styles.specLabel}>Water Resistance</Text>
+                <Text style={styles.specLabel}>Resistência à Água</Text>
                 <Text style={styles.specValue}>{watch.waterResistance}</Text>
+              </View>
+            )}
+            {watch.dialColor && (
+              <View style={styles.specItem}>
+                <Text style={styles.specLabel}>Cor do Mostrador</Text>
+                <Text style={styles.specValue}>{watch.dialColor}</Text>
+              </View>
+            )}
+            {watch.braceletType && (
+              <View style={styles.specItem}>
+                <Text style={styles.specLabel}>Tipo de Pulseira</Text>
+                <Text style={styles.specValue}>{watch.braceletType}</Text>
+              </View>
+            )}
+            {watch.complications && watch.complications.length > 0 && (
+              <View style={styles.specItem}>
+                <Text style={styles.specLabel}>Complicações</Text>
+                <Text style={styles.specValue}>{watch.complications.join(', ')}</Text>
               </View>
             )}
           </View>

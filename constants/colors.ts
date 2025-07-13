@@ -8,6 +8,7 @@ export default {
   border: "#e1e4e8",
   success: "#38a169",
   error: "#e53e3e",
+  warning: "#f6ad55",
   white: "#ffffff",
   black: "#000000",
   gray: {

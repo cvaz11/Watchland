@@ -22,7 +22,7 @@ function RootLayoutNav() {
         headerTitleStyle: {
           fontWeight: '600',
         },
-        headerBackTitle: "Back",
+        headerBackTitle: "Voltar",
         contentStyle: {
           backgroundColor: Colors.background,
         },
@@ -33,16 +33,37 @@ function RootLayoutNav() {
         name="camera" 
         options={{ 
           presentation: 'modal',
-          title: 'Identify Watch',
-          headerTitleStyle: {
-            fontWeight: '600',
-          },
+          headerShown: false,
+        }} 
+      />
+      <Stack.Screen 
+        name="identification-results" 
+        options={{ 
+          headerShown: false,
+        }} 
+      />
+      <Stack.Screen 
+        name="catalog" 
+        options={{ 
+          headerShown: false,
+        }} 
+      />
+      <Stack.Screen 
+        name="identification-history" 
+        options={{ 
+          headerShown: false,
+        }} 
+      />
+      <Stack.Screen 
+        name="settings" 
+        options={{ 
+          headerShown: false,
         }} 
       />
       <Stack.Screen 
         name="watch/[id]" 
         options={{ 
-          title: 'Watch Details',
+          title: 'Detalhes do Relógio',
           headerTitleStyle: {
             fontWeight: '600',
           },

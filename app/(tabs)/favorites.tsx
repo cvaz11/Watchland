@@ -22,12 +22,12 @@ export default function FavoritesScreen() {
   if (favorites.length === 0) {
     return (
       <EmptyState
-        title="No favorites yet"
-        message="Start building your collection by identifying watches or browsing the catalog."
+        title="Nenhum favorito ainda"
+        message="Comece a construir sua coleção identificando relógios ou navegando pelo catálogo."
         icon={<PlusCircle size={64} color={Colors.gray[400]} />}
         action={
           <Button
-            title="Add Watch"
+            title="Adicionar Relógio"
             onPress={handleAddWatch}
             variant="primary"
             icon={<PlusCircle size={20} color={Colors.white} />}

@@ -3,12 +3,12 @@ import React from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import WatchDetail from '@/components/WatchDetail';
-import { watches } from '@/mocks/watches';
+import { watchesDatabase } from '@/mocks/watches-database';
 
 export default function WatchDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   
-  const watch = watches.find((w) => w.id === id);
+  const watch = watchesDatabase.find((w) => w.id === id);
 
   if (!watch) {
     return <View style={styles.container} />;

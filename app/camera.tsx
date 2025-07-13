@@ -1,25 +1,35 @@
 import { useRouter } from 'expo-router';
 import { CameraView, CameraType, useCameraPermissions } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
-import { Camera, Image as ImageIcon, X } from 'lucide-react-native';
-import React, { useState } from 'react';
-import { StyleSheet, Text, View, Pressable, ActivityIndicator, Image, Platform } from 'react-native';
+import { Camera, Image as ImageIcon, X, Zap, RotateCcw } from 'lucide-react-native';
+import React, { useState, useRef } from 'react';
+import { StyleSheet, Text, View, Pressable, ActivityIndicator, Image, Platform, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import Button from '@/components/Button';
 import Colors from '@/constants/colors';
-import { watches } from '@/mocks/watches';
 import { useUserStore } from '@/store/user-store';
+import { useIdentificationStore } from '@/store/identification-store';
+import { analyzeWatchImage } from '@/services/ai-identification';
+import { findMatchingWatches } from '@/services/watch-matching';
+import { compressImage, convertUriToBase64 } from '@/utils/image-utils';
 
 export default function CameraScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const cameraRef = useRef<CameraView>(null);
   const [permission, requestPermission] = useCameraPermissions();
   const [facing, setFacing] = useState<CameraType>('back');
+  const [flash, setFlash] = useState(false);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
-  const [analyzing, setAnalyzing] = useState(false);
-  const [identifiedWatch, setIdentifiedWatch] = useState<any | null>(null);
   const { incrementIdentifications } = useUserStore();
+  const { 
+    isAnalyzing, 
+    setAnalyzing, 
+    currentAnalysis, 
+    setCurrentAnalysis,
+    addToHistory 
+  } = useIdentificationStore();
 
   const handleClose = () => {
     router.back();
@@ -29,58 +39,99 @@ export default function CameraScreen() {
     setFacing(current => (current === 'back' ? 'front' : 'back'));
   };
 
-  const takePicture = async () => {
-    // In a real app, this would capture a photo
-    // For this demo, we'll simulate capturing by setting a random watch image
-    const randomIndex = Math.floor(Math.random() * watches.length);
-    const randomWatch = watches[randomIndex];
-    
-    setCapturedImage(randomWatch.imageUrl);
-    analyzeImage(randomWatch.imageUrl);
+  const toggleFlash = () => {
+    setFlash(current => !current);
   };
 
-  const pickImage = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 1,
-    });
+  const takePicture = async () => {
+    if (!cameraRef.current) return;
 
-    if (!result.canceled) {
-      // In a real app, we would use the selected image
-      // For this demo, we'll simulate by using a random watch
-      const randomIndex = Math.floor(Math.random() * watches.length);
-      const randomWatch = watches[randomIndex];
+    try {
+      const photo = await cameraRef.current.takePictureAsync({
+        quality: 0.8,
+        base64: true,
+      });
       
-      setCapturedImage(randomWatch.imageUrl);
-      analyzeImage(randomWatch.imageUrl);
+      if (photo?.uri) {
+        setCapturedImage(photo.uri);
+        await analyzeImage(photo.uri);
+      }
+    } catch (error) {
+      console.error('Erro ao capturar foto:', error);
+      Alert.alert('Erro', 'Falha ao capturar a foto. Tente novamente.');
     }
   };
 
-  const analyzeImage = (imageUri: string) => {
+  const pickImage = async () => {
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        const imageUri = result.assets[0].uri;
+        setCapturedImage(imageUri);
+        await analyzeImage(imageUri);
+      }
+    } catch (error) {
+      console.error('Erro ao selecionar imagem:', error);
+      Alert.alert('Erro', 'Falha ao selecionar a imagem. Tente novamente.');
+    }
+  };
+
+  const analyzeImage = async (imageUri: string) => {
     setAnalyzing(true);
+    setCurrentAnalysis(null);
     
-    // Simulate API call to identify watch
-    setTimeout(() => {
-      const randomIndex = Math.floor(Math.random() * watches.length);
-      const identifiedWatch = watches[randomIndex];
+    try {
+      // Compress and convert image to base64
+      const compressedBase64 = await compressImage(imageUri);
       
-      setIdentifiedWatch(identifiedWatch);
+      // Analyze with AI
+      const aiAnalysis = await analyzeWatchImage(compressedBase64);
+      setCurrentAnalysis(aiAnalysis);
+      
+      // Find matching watches
+      const matches = findMatchingWatches(aiAnalysis);
+      
+      // Add to history if we have matches
+      if (matches.length > 0) {
+        const bestMatch = matches[0];
+        bestMatch.imageUri = imageUri;
+        addToHistory(bestMatch);
+        incrementIdentifications();
+      }
+      
+      // Navigate to results
+      router.push({
+        pathname: '/identification-results',
+        params: {
+          imageUri,
+          analysisId: Date.now().toString(),
+        },
+      });
+      
+    } catch (error) {
+      console.error('Erro na análise:', error);
+      Alert.alert(
+        'Erro na Análise',
+        'Não foi possível analisar a imagem. Verifique sua conexão e tente novamente.',
+        [
+          { text: 'Tentar Novamente', onPress: () => analyzeImage(imageUri) },
+          { text: 'Cancelar', onPress: resetCamera },
+        ]
+      );
+    } finally {
       setAnalyzing(false);
-      incrementIdentifications();
-    }, 2000);
+    }
   };
 
   const resetCamera = () => {
     setCapturedImage(null);
-    setIdentifiedWatch(null);
-  };
-
-  const viewWatchDetails = () => {
-    if (identifiedWatch) {
-      router.push(`/watch/${identifiedWatch.id}`);
-    }
+    setCurrentAnalysis(null);
   };
 
   if (!permission) {
@@ -90,12 +141,13 @@ export default function CameraScreen() {
   if (!permission.granted) {
     return (
       <View style={[styles.container, styles.centerContent]}>
-        <Text style={styles.permissionTitle}>Camera Access Required</Text>
+        <Text style={styles.permissionTitle}>Acesso à Câmera Necessário</Text>
         <Text style={styles.permissionText}>
-          We need camera access to identify watches. Please grant permission to continue.
+          Precisamos do acesso à câmera para identificar relógios. 
+          Por favor, conceda a permissão para continuar.
         </Text>
         <Button
-          title="Grant Permission"
+          title="Conceder Permissão"
           onPress={requestPermission}
           variant="primary"
         />
@@ -107,10 +159,10 @@ export default function CameraScreen() {
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.header}>
         <Pressable onPress={handleClose} style={styles.closeButton}>
-          <X size={24} color={Colors.text} />
+          <X size={24} color={Colors.white} />
         </Pressable>
         <Text style={styles.headerTitle}>
-          {identifiedWatch ? 'Watch Identified' : capturedImage ? 'Analyzing Watch' : 'Identify Watch'}
+          {isAnalyzing ? '🤖 Analisando com IA...' : '🔍 Identificar Relógio'}
         </Text>
         <View style={styles.placeholder} />
       </View>
@@ -118,41 +170,59 @@ export default function CameraScreen() {
       {!capturedImage ? (
         <>
           <CameraView
+            ref={cameraRef}
             style={styles.camera}
             facing={facing}
+            flash={flash ? 'on' : 'off'}
           >
             <View style={styles.cameraOverlay}>
-              <View style={styles.cameraFrame} />
+              <View style={styles.cameraFrame}>
+                <View style={styles.frameCorner} />
+                <View style={[styles.frameCorner, styles.frameCornerTopRight]} />
+                <View style={[styles.frameCorner, styles.frameCornerBottomLeft]} />
+                <View style={[styles.frameCorner, styles.frameCornerBottomRight]} />
+              </View>
+              <Text style={styles.frameInstruction}>
+                Posicione o relógio no centro do círculo
+              </Text>
             </View>
           </CameraView>
 
           <View style={styles.cameraControls}>
             <Button
-              title="Gallery"
+              title="Galeria"
               onPress={pickImage}
               variant="outline"
               icon={<ImageIcon size={20} color={Colors.primary} />}
             />
-            <Pressable onPress={takePicture} style={styles.captureButton}>
-              <View style={styles.captureButtonInner} />
-            </Pressable>
-            {Platform.OS !== 'web' && (
-              <Button
-                title="Flip"
-                onPress={toggleCameraFacing}
-                variant="outline"
-                icon={<Camera size={20} color={Colors.primary} />}
-              />
-            )}
+            
+            <View style={styles.captureContainer}>
+              <Pressable onPress={takePicture} style={styles.captureButton}>
+                <View style={styles.captureButtonInner}>
+                  <Camera size={24} color={Colors.white} />
+                </View>
+              </Pressable>
+            </View>
+
+            <View style={styles.controlsRight}>
+              {Platform.OS !== 'web' && (
+                <Pressable onPress={toggleFlash} style={styles.controlButton}>
+                  <Zap size={20} color={flash ? Colors.accent : Colors.white} />
+                </Pressable>
+              )}
+              <Pressable onPress={toggleCameraFacing} style={styles.controlButton}>
+                <RotateCcw size={20} color={Colors.white} />
+              </Pressable>
+            </View>
           </View>
 
           <View style={styles.instructions}>
-            <Text style={styles.instructionsTitle}>How to get the best results:</Text>
+            <Text style={styles.instructionsTitle}>Como obter os melhores resultados:</Text>
             <Text style={styles.instructionsText}>
-              • Position the watch face clearly in the frame{'\n'}
-              • Ensure good lighting{'\n'}
-              • Hold the camera steady{'\n'}
-              • Remove reflections if possible
+              • Posicione o mostrador do relógio claramente no quadro{'\n'}
+              • Garanta boa iluminação{'\n'}
+              • Mantenha a câmera estável{'\n'}
+              • Remova reflexos se possível
             </Text>
           </View>
         </>
@@ -160,52 +230,22 @@ export default function CameraScreen() {
         <View style={styles.resultContainer}>
           <Image source={{ uri: capturedImage }} style={styles.capturedImage} />
           
-          {analyzing ? (
+          {isAnalyzing ? (
             <View style={styles.analyzingContainer}>
               <ActivityIndicator size="large" color={Colors.primary} />
-              <Text style={styles.analyzingText}>Analyzing watch...</Text>
+              <Text style={styles.analyzingText}>🤖 Analisando com IA...</Text>
               <Text style={styles.analyzingSubtext}>
-                Our AI is identifying the brand, model, and specifications.
+                Nossa IA está identificando a marca, modelo e especificações.
               </Text>
             </View>
           ) : (
-            <View style={styles.identificationResult}>
-              <Text style={styles.resultTitle}>Watch Identified</Text>
-              
-              <View style={styles.resultDetails}>
-                <View style={styles.resultItem}>
-                  <Text style={styles.resultLabel}>Brand</Text>
-                  <Text style={styles.resultValue}>{identifiedWatch?.brand}</Text>
-                </View>
-                <View style={styles.resultItem}>
-                  <Text style={styles.resultLabel}>Model</Text>
-                  <Text style={styles.resultValue}>{identifiedWatch?.model}</Text>
-                </View>
-                <View style={styles.resultItem}>
-                  <Text style={styles.resultLabel}>Reference</Text>
-                  <Text style={styles.resultValue}>{identifiedWatch?.reference}</Text>
-                </View>
-                <View style={styles.resultItem}>
-                  <Text style={styles.resultLabel}>Estimated Value</Text>
-                  <Text style={styles.resultValue}>{identifiedWatch?.price}</Text>
-                </View>
-              </View>
-              
-              <View style={styles.resultActions}>
-                <Button
-                  title="View Details"
-                  onPress={viewWatchDetails}
-                  variant="primary"
-                  fullWidth
-                />
-                <View style={styles.spacer} />
-                <Button
-                  title="Identify Another"
-                  onPress={resetCamera}
-                  variant="outline"
-                  fullWidth
-                />
-              </View>
+            <View style={styles.resultActions}>
+              <Button
+                title="🔍 Tentar Novamente"
+                onPress={resetCamera}
+                variant="outline"
+                fullWidth
+              />
             </View>
           )}
         </View>
@@ -217,12 +257,13 @@ export default function CameraScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: Colors.black,
   },
   centerContent: {
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
+    backgroundColor: Colors.background,
   },
   header: {
     flexDirection: 'row',
@@ -230,19 +271,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 16,
+    backgroundColor: 'rgba(0,0,0,0.5)',
   },
   closeButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: Colors.gray[200],
+    backgroundColor: 'rgba(255,255,255,0.2)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: Colors.text,
+    color: Colors.white,
   },
   placeholder: {
     width: 40,
@@ -252,39 +294,97 @@ const styles = StyleSheet.create({
   },
   cameraOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.2)',
+    backgroundColor: 'rgba(0,0,0,0.3)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   cameraFrame: {
     width: 280,
     height: 280,
-    borderWidth: 2,
+    borderRadius: 140,
+    borderWidth: 3,
+    borderColor: Colors.accent,
+    position: 'relative',
+  },
+  frameCorner: {
+    position: 'absolute',
+    width: 20,
+    height: 20,
     borderColor: Colors.white,
-    borderRadius: 16,
+    top: -10,
+    left: -10,
+    borderTopWidth: 3,
+    borderLeftWidth: 3,
+  },
+  frameCornerTopRight: {
+    left: undefined,
+    right: -10,
+    borderLeftWidth: 0,
+    borderRightWidth: 3,
+  },
+  frameCornerBottomLeft: {
+    top: undefined,
+    bottom: -10,
+    borderTopWidth: 0,
+    borderBottomWidth: 3,
+  },
+  frameCornerBottomRight: {
+    top: undefined,
+    bottom: -10,
+    left: undefined,
+    right: -10,
+    borderTopWidth: 0,
+    borderLeftWidth: 0,
+    borderBottomWidth: 3,
+    borderRightWidth: 3,
+  },
+  frameInstruction: {
+    color: Colors.white,
+    fontSize: 16,
+    fontWeight: '500',
+    marginTop: 20,
+    textAlign: 'center',
   },
   cameraControls: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
+    justifyContent: 'space-between',
     alignItems: 'center',
     paddingVertical: 20,
-    backgroundColor: Colors.white,
+    paddingHorizontal: 20,
+    backgroundColor: 'rgba(0,0,0,0.8)',
+  },
+  captureContainer: {
+    alignItems: 'center',
   },
   captureButton: {
     width: 70,
     height: 70,
     borderRadius: 35,
-    backgroundColor: Colors.white,
+    backgroundColor: 'rgba(255,255,255,0.2)',
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 4,
-    borderColor: Colors.primary,
+    borderWidth: 3,
+    borderColor: Colors.accent,
   },
   captureButtonInner: {
     width: 54,
     height: 54,
     borderRadius: 27,
     backgroundColor: Colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  controlsRight: {
+    flexDirection: 'column',
+    gap: 12,
+  },
+  controlButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   instructions: {
     padding: 20,
@@ -317,6 +417,7 @@ const styles = StyleSheet.create({
   },
   resultContainer: {
     flex: 1,
+    backgroundColor: Colors.background,
   },
   capturedImage: {
     width: '100%',
@@ -342,47 +443,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 20,
   },
-  identificationResult: {
-    flex: 1,
-    padding: 20,
-  },
-  resultTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: Colors.primary,
-    marginBottom: 20,
-  },
-  resultDetails: {
-    backgroundColor: Colors.white,
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 24,
-    shadowColor: Colors.black,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  resultItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.gray[200],
-  },
-  resultLabel: {
-    fontSize: 14,
-    color: Colors.gray[600],
-  },
-  resultValue: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: Colors.text,
-  },
   resultActions: {
-    marginTop: 'auto',
-  },
-  spacer: {
-    height: 12,
+    padding: 20,
   },
 });

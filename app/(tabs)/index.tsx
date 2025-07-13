@@ -6,8 +6,8 @@ import { StyleSheet, Text, View, ScrollView, Image } from 'react-native';
 import Button from '@/components/Button';
 import WatchCard from '@/components/WatchCard';
 import Colors from '@/constants/colors';
-import { featuredWatch } from '@/mocks/watches';
-import { watches } from '@/mocks/watches';
+import { featuredWatch } from '@/mocks/watches-database';
+import { watchesDatabase } from '@/mocks/watches-database';
 
 export default function DiscoverScreen() {
   const router = useRouter();
@@ -17,25 +17,24 @@ export default function DiscoverScreen() {
   };
 
   const handleBrowseCatalog = () => {
-    // In a real app, this would navigate to a catalog screen
-    console.log('Browse catalog');
+    router.push('/catalog');
   };
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       <View style={styles.header}>
         <Text style={styles.title}>ChronoLab</Text>
-        <Text style={styles.subtitle}>Identify and collect watches</Text>
+        <Text style={styles.subtitle}>Identifique e colecione relógios</Text>
       </View>
 
       <View style={styles.featuredContainer}>
-        <Text style={styles.sectionTitle}>Featured Watch</Text>
+        <Text style={styles.sectionTitle}>Relógio em Destaque</Text>
         <WatchCard watch={featuredWatch} size="large" />
       </View>
 
       <View style={styles.actionsContainer}>
         <Button
-          title="Identify Watch"
+          title="🔍 Identificar Relógio"
           onPress={handleIdentifyWatch}
           variant="primary"
           size="large"
@@ -44,7 +43,7 @@ export default function DiscoverScreen() {
         />
         <View style={styles.spacer} />
         <Button
-          title="Browse Catalog"
+          title="📚 Navegar Catálogo"
           onPress={handleBrowseCatalog}
           variant="outline"
           size="large"
@@ -54,9 +53,9 @@ export default function DiscoverScreen() {
       </View>
 
       <View style={styles.recentContainer}>
-        <Text style={styles.sectionTitle}>Popular Watches</Text>
+        <Text style={styles.sectionTitle}>Relógios Populares</Text>
         <View style={styles.recentGrid}>
-          {watches.slice(0, 4).map((watch) => (
+          {watchesDatabase.slice(0, 4).map((watch) => (
             <View key={watch.id} style={styles.gridItem}>
               <WatchCard watch={watch} size="small" />
             </View>
@@ -70,10 +69,10 @@ export default function DiscoverScreen() {
           style={styles.appInfoImage}
         />
         <View style={styles.appInfoContent}>
-          <Text style={styles.appInfoTitle}>ChronoLab</Text>
+          <Text style={styles.appInfoTitle}>ChronoLab Brasil</Text>
           <Text style={styles.appInfoText}>
-            Identify watches, build your collection, and stay updated with the latest
-            in horology.
+            Identifique relógios com IA, construa sua coleção e mantenha-se atualizado 
+            com as últimas novidades da relojoaria mundial.
           </Text>
         </View>
       </View>

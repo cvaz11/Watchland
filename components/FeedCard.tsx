@@ -45,10 +45,10 @@ export default function FeedCard({ item }: FeedCardProps) {
         >
           <Text style={[styles.badgeText, { color: badgeColors.text }]}>
             {item.type === 'watchOfTheDay'
-              ? 'Watch of the Day'
+              ? 'Relógio do Dia'
               : item.type === 'didYouKnow'
-              ? 'Did You Know?'
-              : 'Trending'}
+              ? 'Você Sabia?'
+              : 'Tendência'}
           </Text>
         </View>
         <Text style={styles.title}>{item.title}</Text>

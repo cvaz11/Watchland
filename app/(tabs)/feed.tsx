@@ -12,7 +12,6 @@ export default function FeedScreen() {
 
   const onRefresh = React.useCallback(() => {
     setRefreshing(true);
-    // In a real app, this would fetch new data
     setTimeout(() => {
       setRefreshing(false);
     }, 1000);

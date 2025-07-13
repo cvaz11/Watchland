@@ -1,15 +1,19 @@
-import { Crown, Settings } from 'lucide-react-native';
+import { Crown, Settings, History } from 'lucide-react-native';
 import React from 'react';
 import { StyleSheet, Text, View, Image, Pressable, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 
 import Button from '@/components/Button';
 import Colors from '@/constants/colors';
 import { useUserStore } from '@/store/user-store';
+import { useIdentificationStore } from '@/store/identification-store';
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
+  const router = useRouter();
   const { user, isLoggedIn, login, logout } = useUserStore();
+  const { history } = useIdentificationStore();
 
   const handleLogin = () => {
     login();
@@ -20,24 +24,26 @@ export default function ProfileScreen() {
   };
 
   const handleSettings = () => {
-    // In a real app, this would navigate to settings
-    console.log('Navigate to settings');
+    router.push('/settings');
+  };
+
+  const handleHistory = () => {
+    router.push('/identification-history');
   };
 
   const handleUpgrade = () => {
-    // In a real app, this would navigate to premium upgrade
-    console.log('Navigate to premium upgrade');
+    console.log('Navegar para upgrade premium');
   };
 
   if (!isLoggedIn || !user) {
     return (
       <View style={[styles.container, styles.centerContent]}>
-        <Text style={styles.title}>Welcome to ChronoLab</Text>
+        <Text style={styles.title}>Bem-vindo ao ChronoLab</Text>
         <Text style={styles.subtitle}>
-          Sign in to save your watch collection and identification history.
+          Faça login para salvar sua coleção de relógios e histórico de identificações.
         </Text>
         <Button
-          title="Sign In"
+          title="Entrar"
           onPress={handleLogin}
           variant="primary"
           size="large"
@@ -71,12 +77,12 @@ export default function ProfileScreen() {
       <View style={styles.statsContainer}>
         <View style={styles.statItem}>
           <Text style={styles.statValue}>{user.watchesSaved}</Text>
-          <Text style={styles.statLabel}>Watches Saved</Text>
+          <Text style={styles.statLabel}>Relógios Salvos</Text>
         </View>
         <View style={styles.statDivider} />
         <View style={styles.statItem}>
-          <Text style={styles.statValue}>{user.identificationsCount}</Text>
-          <Text style={styles.statLabel}>Identifications</Text>
+          <Text style={styles.statValue}>{history.length}</Text>
+          <Text style={styles.statLabel}>Identificações</Text>
         </View>
       </View>
 
@@ -85,14 +91,14 @@ export default function ProfileScreen() {
           <View style={styles.premiumContent}>
             <Crown size={24} color={Colors.accent} />
             <View style={styles.premiumTextContainer}>
-              <Text style={styles.premiumTitle}>Upgrade to Premium</Text>
+              <Text style={styles.premiumTitle}>Upgrade para Premium</Text>
               <Text style={styles.premiumDescription}>
-                Get unlimited identifications, detailed specs, and price history.
+                Tenha identificações ilimitadas, especificações detalhadas e histórico de preços.
               </Text>
             </View>
           </View>
           <Button
-            title="Upgrade"
+            title="Fazer Upgrade"
             onPress={handleUpgrade}
             variant="secondary"
             size="small"
@@ -101,33 +107,43 @@ export default function ProfileScreen() {
       )}
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Account</Text>
+        <Text style={styles.sectionTitle}>Identificações</Text>
+        <Pressable style={styles.menuItem} onPress={handleHistory}>
+          <View style={styles.menuItemContent}>
+            <History size={20} color={Colors.primary} />
+            <Text style={styles.menuItemText}>Histórico de Identificações</Text>
+          </View>
+        </Pressable>
+      </View>
+
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Conta</Text>
         <View style={styles.menuItem}>
-          <Text style={styles.menuItemText}>Edit Profile</Text>
+          <Text style={styles.menuItemText}>Editar Perfil</Text>
         </View>
         <View style={styles.menuItem}>
-          <Text style={styles.menuItemText}>Notification Settings</Text>
+          <Text style={styles.menuItemText}>Configurações de Notificação</Text>
         </View>
         <View style={styles.menuItem}>
-          <Text style={styles.menuItemText}>Privacy Settings</Text>
+          <Text style={styles.menuItemText}>Configurações de Privacidade</Text>
         </View>
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Support</Text>
+        <Text style={styles.sectionTitle}>Suporte</Text>
         <View style={styles.menuItem}>
-          <Text style={styles.menuItemText}>Help Center</Text>
+          <Text style={styles.menuItemText}>Central de Ajuda</Text>
         </View>
         <View style={styles.menuItem}>
-          <Text style={styles.menuItemText}>Contact Us</Text>
+          <Text style={styles.menuItemText}>Fale Conosco</Text>
         </View>
         <View style={styles.menuItem}>
-          <Text style={styles.menuItemText}>About ChronoLab</Text>
+          <Text style={styles.menuItemText}>Sobre o ChronoLab</Text>
         </View>
       </View>
 
       <Button
-        title="Sign Out"
+        title="Sair"
         onPress={handleLogout}
         variant="outline"
         fullWidth
@@ -277,8 +293,13 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginBottom: 8,
   },
+  menuItemContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   menuItemText: {
     fontSize: 16,
     color: Colors.text,
+    marginLeft: 12,
   },
 });

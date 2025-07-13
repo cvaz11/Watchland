@@ -31,14 +31,14 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: "Discover",
+          title: "Descobrir",
           tabBarIcon: ({ color }) => <Compass color={color} size={22} />,
         }}
       />
       <Tabs.Screen
         name="favorites"
         options={{
-          title: "Favorites",
+          title: "Favoritos",
           tabBarIcon: ({ color }) => <Heart color={color} size={22} />,
         }}
       />
@@ -52,7 +52,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="profile"
         options={{
-          title: "Profile",
+          title: "Perfil",
           tabBarIcon: ({ color }) => <User color={color} size={22} />,
         }}
       />
