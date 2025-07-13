@@ -132,7 +132,7 @@ const styles = StyleSheet.create({
   },
   outlineButton: {
     backgroundColor: 'transparent',
-    borderWidth: 1,
+    borderWidth: 2,
     borderColor: Colors.primary,
   },
   disabledButton: {
@@ -145,14 +145,17 @@ const styles = StyleSheet.create({
   smallButton: {
     paddingVertical: 8,
     paddingHorizontal: 16,
+    minHeight: 44,
   },
   mediumButton: {
     paddingVertical: 12,
     paddingHorizontal: 24,
+    minHeight: 44,
   },
   largeButton: {
     paddingVertical: 16,
     paddingHorizontal: 32,
+    minHeight: 60,
   },
   text: {
     fontWeight: '600',
