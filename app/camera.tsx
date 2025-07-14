@@ -162,7 +162,7 @@ export default function CameraScreen() {
           <X size={24} color={Colors.white} />
         </Pressable>
         <Text style={styles.headerTitle}>
-          {isAnalyzing ? '🤖 Analisando com IA...' : '🔍 Identificar Relógio'}
+          {isAnalyzing ? 'Analisando com IA...' : 'Identificar Relógio'}
         </Text>
         <View style={styles.placeholder} />
       </View>
@@ -233,7 +233,7 @@ export default function CameraScreen() {
           {isAnalyzing ? (
             <View style={styles.analyzingContainer}>
               <ActivityIndicator size="large" color={Colors.primary} />
-              <Text style={styles.analyzingText}>🤖 Analisando com IA...</Text>
+              <Text style={styles.analyzingText}>Analisando com IA...</Text>
               <Text style={styles.analyzingSubtext}>
                 Nossa IA está identificando a marca, modelo e especificações.
               </Text>
@@ -241,7 +241,7 @@ export default function CameraScreen() {
           ) : (
             <View style={styles.resultActions}>
               <Button
-                title="🔍 Tentar Novamente"
+                title="Tentar Novamente"
                 onPress={resetCamera}
                 variant="outline"
                 fullWidth

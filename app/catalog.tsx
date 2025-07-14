@@ -97,7 +97,7 @@ export default function CatalogScreen() {
         <Pressable onPress={handleBack} style={styles.backButton}>
           <ArrowLeft size={24} color={Colors.primary} />
         </Pressable>
-        <Text style={styles.headerTitle}>📚 Catálogo de Relógios</Text>
+        <Text style={styles.headerTitle}>Catálogo de Relógios</Text>
         <View style={styles.placeholder} />
       </View>
 
@@ -188,7 +188,7 @@ export default function CatalogScreen() {
         </Text>
         {searchQuery && (
           <Text style={styles.searchHint}>
-            💡 Use linguagem natural: "cronógrafo azul até R$ 30.000"
+            Use linguagem natural: cronógrafo azul até R$ 30.000
           </Text>
         )}
       </View>
@@ -214,7 +214,7 @@ export default function CatalogScreen() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>💡 Exemplos de Busca</Text>
+              <Text style={styles.modalTitle}>Exemplos de Busca</Text>
               <Pressable onPress={() => setShowExamples(false)} style={styles.modalCloseButton}>
                 <X size={24} color={Colors.gray[600]} />
               </Pressable>
@@ -231,17 +231,17 @@ export default function CatalogScreen() {
                   style={styles.exampleItem}
                   onPress={() => handleExamplePress(example)}
                 >
-                  <Text style={styles.exampleText}>"{example}"</Text>
+                  <Text style={styles.exampleText}>{example}</Text>
                 </Pressable>
               ))}
               
               <View style={styles.modalTip}>
-                <Text style={styles.tipTitle}>🎯 Dicas para melhor busca:</Text>
+                <Text style={styles.tipTitle}>Dicas para melhor busca:</Text>
                 <Text style={styles.tipText}>
-                  • Mencione cor: "preto", "dourado", "azul"{'\n'}
-                  • Inclua faixa de preço: "até R$ 10.000"{'\n'}
-                  • Descreva o estilo: "esportivo", "clássico", "vintage"{'\n'}
-                  • Especifique uso: "para trabalho", "mergulho", "viagem"
+                  • Mencione cor: preto, dourado, azul{'\n'}
+                  • Inclua faixa de preço: até R$ 10.000{'\n'}
+                  • Descreva o estilo: esportivo, clássico, vintage{'\n'}
+                  • Especifique uso: para trabalho, mergulho, viagem
                 </Text>
               </View>
             </ScrollView>

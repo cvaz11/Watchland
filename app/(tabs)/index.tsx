@@ -26,7 +26,7 @@ export default function DiscoverScreen() {
 
       <View style={styles.actionsContainer}>
         <Button
-          title="📷 Identificar Relógio"
+          title="Identificar Relógio"
           onPress={handleIdentifyWatch}
           variant="primary"
           size="large"
@@ -35,7 +35,7 @@ export default function DiscoverScreen() {
         />
         <View style={styles.buttonSpacing} />
         <Button
-          title="🔍 Navegar Catálogo"
+          title="Navegar Catálogo"
           onPress={handleBrowseCatalog}
           variant="outline"
           size="large"
