@@ -2,6 +2,7 @@ import { useRouter } from 'expo-router';
 import { Heart } from 'lucide-react-native';
 import React from 'react';
 import { StyleSheet, Text, View, Pressable, Image } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 
 import Colors from '@/constants/colors';
 import { useFavoritesStore } from '@/store/favorites-store';
@@ -37,27 +38,27 @@ export default function WatchCard({ watch, size = 'medium', showRarity = false }
     const rarityConfig = {
       common: { 
         emoji: '🟢', 
-        text: 'Comum', 
-        backgroundColor: 'rgba(34, 197, 94, 0.95)',
-        textColor: '#FFFFFF'
+        text: 'Comum',
+        gradientColors: ['rgba(34, 197, 94, 0.9)', 'rgba(22, 163, 74, 0.85)'],
+        shadowColor: 'rgba(34, 197, 94, 0.4)',
       },
       rare: { 
         emoji: '🟡', 
-        text: 'Raro', 
-        backgroundColor: 'rgba(251, 191, 36, 0.95)',
-        textColor: '#FFFFFF'
+        text: 'Raro',
+        gradientColors: ['rgba(251, 191, 36, 0.9)', 'rgba(245, 158, 11, 0.85)'],
+        shadowColor: 'rgba(251, 191, 36, 0.4)',
       },
       very_rare: { 
         emoji: '🟠', 
-        text: 'Muito Raro', 
-        backgroundColor: 'rgba(249, 115, 22, 0.95)',
-        textColor: '#FFFFFF'
+        text: 'Muito Raro',
+        gradientColors: ['rgba(249, 115, 22, 0.9)', 'rgba(234, 88, 12, 0.85)'],
+        shadowColor: 'rgba(249, 115, 22, 0.4)',
       },
       unicorn: { 
         emoji: '🔴', 
-        text: 'Unicórnio', 
-        backgroundColor: 'rgba(239, 68, 68, 0.95)',
-        textColor: '#FFFFFF'
+        text: 'Unicórnio',
+        gradientColors: ['rgba(239, 68, 68, 0.9)', 'rgba(220, 38, 38, 0.85)'],
+        shadowColor: 'rgba(239, 68, 68, 0.4)',
       },
     };
     
@@ -96,16 +97,24 @@ export default function WatchCard({ watch, size = 'medium', showRarity = false }
         />
         
         {showRarity && rarityInfo && (
-          <View style={[
-            styles.rarityBadge, 
-            { backgroundColor: rarityInfo.backgroundColor }
-          ]}>
-            <Text style={[
-              styles.rarityText,
-              { color: rarityInfo.textColor }
-            ]}>
-              {rarityInfo.emoji} {rarityInfo.text}
-            </Text>
+          <View style={styles.rarityBadgeContainer}>
+            <LinearGradient
+              colors={rarityInfo.gradientColors}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={[
+                styles.rarityBadge,
+                {
+                  shadowColor: rarityInfo.shadowColor,
+                }
+              ]}
+            >
+              <View style={styles.rarityBadgeInner}>
+                <Text style={styles.rarityText}>
+                  {rarityInfo.emoji} {rarityInfo.text}
+                </Text>
+              </View>
+            </LinearGradient>
           </View>
         )}
       </View>
@@ -179,25 +188,39 @@ const styles = StyleSheet.create({
   largeImage: {
     height: 220,
   },
-  rarityBadge: {
+  rarityBadgeContainer: {
     position: 'absolute',
-    top: 8,
-    right: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
+    top: 12,
+    right: 12,
+  },
+  rarityBadge: {
+    borderRadius: 12,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  rarityBadgeInner: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 12,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.3)',
-    shadowColor: Colors.black,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    shadowColor: 'rgba(0, 0, 0, 0.1)',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
+    shadowOpacity: 1,
     shadowRadius: 4,
     elevation: 2,
   },
   rarityText: {
-    fontSize: 12,
-    fontWeight: '600',
-    letterSpacing: 0.5,
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.8,
+    color: '#FFFFFF',
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   content: {
     padding: 12,
