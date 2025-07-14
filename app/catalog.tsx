@@ -1,12 +1,14 @@
-import { Search, Filter } from 'lucide-react-native';
+import { Search, Filter, ArrowLeft, Lightbulb, X } from 'lucide-react-native';
 import React, { useState, useMemo } from 'react';
-import { StyleSheet, Text, View, TextInput, FlatList, Pressable } from 'react-native';
+import { StyleSheet, Text, View, TextInput, FlatList, Pressable, Modal, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 
 import WatchCard from '@/components/WatchCard';
+import Button from '@/components/Button';
 import Colors from '@/constants/colors';
 import { watchesDatabase } from '@/mocks/watches-database';
-import { searchWatches } from '@/services/watch-matching';
+import { searchWatches, searchWithAI } from '@/services/watch-matching';
 
 const BRANDS = ['Todos', 'Rolex', 'Omega', 'Patek Philippe', 'Audemars Piguet', 'TAG Heuer', 'Breitling', 'IWC', 'Grand Seiko', 'Jaeger-LeCoultre'];
 const PRICE_RANGES = [
@@ -17,12 +19,26 @@ const PRICE_RANGES = [
   { label: 'Acima de R$ 100.000', min: 100000, max: Infinity },
 ];
 
+const SEARCH_EXAMPLES = [
+  "relógio dourado até R$ 10.000",
+  "cronógrafo preto esportivo",
+  "relógio clássico para trabalho",
+  "mergulhador automático",
+  "relógio para presente até R$ 5.000",
+  "cronógrafo vintage italiano",
+  "dress watch suíço dourado",
+  "GMT para viagem profissional",
+];
+
 export default function CatalogScreen() {
   const insets = useSafeAreaInsets();
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedBrand, setSelectedBrand] = useState('Todos');
   const [selectedPriceRange, setSelectedPriceRange] = useState(PRICE_RANGES[0]);
   const [showFilters, setShowFilters] = useState(false);
+  const [showExamples, setShowExamples] = useState(false);
+  const [isSearchingWithAI, setIsSearchingWithAI] = useState(false);
 
   const filteredWatches = useMemo(() => {
     let watches = searchQuery ? searchWatches(searchQuery) : watchesDatabase;
@@ -41,6 +57,10 @@ export default function CatalogScreen() {
     return watches;
   }, [searchQuery, selectedBrand, selectedPriceRange]);
 
+  const handleBack = () => {
+    router.back();
+  };
+
   const toggleFilters = () => {
     setShowFilters(!showFilters);
   };
@@ -51,10 +71,35 @@ export default function CatalogScreen() {
     setSearchQuery('');
   };
 
+  const handleExamplePress = (example: string) => {
+    setSearchQuery(example);
+    setShowExamples(false);
+    handleSmartSearch(example);
+  };
+
+  const handleSmartSearch = async (query: string) => {
+    if (!query.trim()) return;
+    
+    setIsSearchingWithAI(true);
+    try {
+      const aiResults = await searchWithAI(query);
+      // AI results would be processed here
+      console.log('Busca com IA:', aiResults);
+    } catch (error) {
+      console.error('Erro na busca com IA:', error);
+    } finally {
+      setIsSearchingWithAI(false);
+    }
+  };
+
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.header}>
+        <Pressable onPress={handleBack} style={styles.backButton}>
+          <ArrowLeft size={24} color={Colors.primary} />
+        </Pressable>
         <Text style={styles.headerTitle}>📚 Catálogo de Relógios</Text>
+        <View style={styles.placeholder} />
       </View>
 
       <View style={styles.searchContainer}>
@@ -62,12 +107,19 @@ export default function CatalogScreen() {
           <Search size={20} color={Colors.gray[500]} />
           <TextInput
             style={styles.searchInput}
-            placeholder="Buscar marca ou modelo..."
+            placeholder="Descreva o relógio que procura..."
             value={searchQuery}
             onChangeText={setSearchQuery}
             placeholderTextColor={Colors.gray[500]}
+            onSubmitEditing={() => handleSmartSearch(searchQuery)}
           />
+          {isSearchingWithAI && (
+            <Text style={styles.aiIndicator}>🤖</Text>
+          )}
         </View>
+        <Pressable onPress={() => setShowExamples(true)} style={styles.examplesButton}>
+          <Lightbulb size={20} color={Colors.primary} />
+        </Pressable>
         <Pressable onPress={toggleFilters} style={styles.filterButton}>
           <Filter size={20} color={Colors.primary} />
         </Pressable>
@@ -135,12 +187,17 @@ export default function CatalogScreen() {
         <Text style={styles.resultsCount}>
           {filteredWatches.length} relógio{filteredWatches.length !== 1 ? 's' : ''} encontrado{filteredWatches.length !== 1 ? 's' : ''}
         </Text>
+        {searchQuery && (
+          <Text style={styles.searchHint}>
+            💡 Use linguagem natural: "cronógrafo azul até R$ 30.000"
+          </Text>
+        )}
       </View>
 
       <FlatList
         data={filteredWatches}
         keyExtractor={(item) => item.id}
-        renderItem={({ item }) => <WatchCard watch={item} />}
+        renderItem={({ item }) => <WatchCard watch={item} showRarity />}
         contentContainerStyle={[
           styles.listContent,
           { paddingBottom: insets.bottom + 20 },
@@ -148,6 +205,51 @@ export default function CatalogScreen() {
         showsVerticalScrollIndicator={false}
         numColumns={1}
       />
+
+      {/* Examples Modal */}
+      <Modal
+        visible={showExamples}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowExamples(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>💡 Exemplos de Busca</Text>
+              <Pressable onPress={() => setShowExamples(false)} style={styles.modalCloseButton}>
+                <X size={24} color={Colors.gray[600]} />
+              </Pressable>
+            </View>
+            
+            <ScrollView style={styles.modalBody}>
+              <Text style={styles.modalDescription}>
+                Use linguagem natural para encontrar o relógio perfeito:
+              </Text>
+              
+              {SEARCH_EXAMPLES.map((example, index) => (
+                <Pressable
+                  key={index}
+                  style={styles.exampleItem}
+                  onPress={() => handleExamplePress(example)}
+                >
+                  <Text style={styles.exampleText}>"{example}"</Text>
+                </Pressable>
+              ))}
+              
+              <View style={styles.modalTip}>
+                <Text style={styles.tipTitle}>🎯 Dicas para melhor busca:</Text>
+                <Text style={styles.tipText}>
+                  • Mencione cor: "preto", "dourado", "azul"
+                  {'\n'}• Inclua faixa de preço: "até R$ 10.000"
+                  {'\n'}• Descreva o estilo: "esportivo", "clássico", "vintage"
+                  {'\n'}• Especifique uso: "para trabalho", "mergulho", "viagem"
+                </Text>
+              </View>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -158,16 +260,31 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.background,
   },
   header: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 16,
     backgroundColor: Colors.white,
     borderBottomWidth: 1,
     borderBottomColor: Colors.gray[200],
   },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: Colors.gray[200],
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
   headerTitle: {
     fontSize: 20,
     fontWeight: '600',
     color: Colors.primary,
+    flex: 1,
+  },
+  placeholder: {
+    width: 40,
   },
   searchContainer: {
     flexDirection: 'row',
@@ -185,13 +302,26 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 12,
-    marginRight: 12,
+    marginRight: 8,
   },
   searchInput: {
     flex: 1,
     fontSize: 16,
     color: Colors.text,
     marginLeft: 12,
+  },
+  aiIndicator: {
+    fontSize: 16,
+    marginLeft: 8,
+  },
+  examplesButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: Colors.gray[100],
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 8,
   },
   filterButton: {
     width: 44,
@@ -254,8 +384,83 @@ const styles = StyleSheet.create({
   resultsCount: {
     fontSize: 14,
     color: Colors.gray[600],
+    marginBottom: 4,
+  },
+  searchHint: {
+    fontSize: 12,
+    color: Colors.gray[500],
+    fontStyle: 'italic',
   },
   listContent: {
     padding: 20,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: Colors.white,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: '80%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.gray[200],
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: Colors.text,
+  },
+  modalCloseButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: Colors.gray[200],
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalBody: {
+    padding: 20,
+  },
+  modalDescription: {
+    fontSize: 16,
+    color: Colors.textLight,
+    marginBottom: 20,
+    lineHeight: 24,
+  },
+  exampleItem: {
+    backgroundColor: Colors.gray[100],
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 12,
+  },
+  exampleText: {
+    fontSize: 16,
+    color: Colors.primary,
+    fontWeight: '500',
+  },
+  modalTip: {
+    backgroundColor: Colors.accent + '20',
+    padding: 16,
+    borderRadius: 12,
+    marginTop: 20,
+  },
+  tipTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: Colors.text,
+    marginBottom: 8,
+  },
+  tipText: {
+    fontSize: 14,
+    color: Colors.textLight,
+    lineHeight: 20,
   },
 });

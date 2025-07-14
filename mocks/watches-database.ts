@@ -22,6 +22,9 @@ export const watchesDatabase: Watch[] = [
     complications: ['Data'],
     category: 'Mergulho',
     keywords: ['submariner', 'rolex', 'mergulho', 'preto', 'aço', 'oyster', 'automático'],
+    rarity: 'rare',
+    priceTrend: 8,
+    isBestInvestment: true,
   },
   {
     id: '2',
@@ -43,6 +46,9 @@ export const watchesDatabase: Watch[] = [
     complications: ['GMT', 'Data'],
     category: 'GMT',
     keywords: ['gmt', 'master', 'rolex', 'pepsi', 'vermelho', 'azul', 'viagem'],
+    rarity: 'very_rare',
+    priceTrend: 12,
+    isBestInvestment: true,
   },
   {
     id: '3',
@@ -64,6 +70,9 @@ export const watchesDatabase: Watch[] = [
     complications: ['Cronógrafo', 'Taquímetro'],
     category: 'Cronógrafo',
     keywords: ['daytona', 'rolex', 'cronógrafo', 'corrida', 'branco', 'taquímetro'],
+    rarity: 'unicorn',
+    priceTrend: 15,
+    isBestInvestment: true,
   },
   {
     id: '4',
@@ -85,6 +94,8 @@ export const watchesDatabase: Watch[] = [
     complications: ['Data'],
     category: 'Clássico',
     keywords: ['datejust', 'rolex', 'clássico', 'azul', 'jubilee', 'elegante'],
+    rarity: 'common',
+    priceTrend: 5,
   },
 
   // OMEGA
@@ -108,6 +119,9 @@ export const watchesDatabase: Watch[] = [
     complications: ['Cronógrafo', 'Taquímetro'],
     category: 'Cronógrafo',
     keywords: ['speedmaster', 'omega', 'moonwatch', 'lua', 'cronógrafo', 'nasa'],
+    rarity: 'rare',
+    priceTrend: 7,
+    isBestInvestment: true,
   },
   {
     id: '6',
@@ -129,6 +143,8 @@ export const watchesDatabase: Watch[] = [
     complications: ['Data', 'Hélio'],
     category: 'Mergulho',
     keywords: ['seamaster', 'omega', 'planet', 'ocean', 'mergulho', '007', 'bond'],
+    rarity: 'common',
+    priceTrend: 3,
   },
 
   // PATEK PHILIPPE
@@ -152,6 +168,9 @@ export const watchesDatabase: Watch[] = [
     complications: ['Data'],
     category: 'Esportivo Luxo',
     keywords: ['nautilus', 'patek', 'philippe', 'azul', 'escotilha', 'luxo', 'esportivo'],
+    rarity: 'unicorn',
+    priceTrend: 25,
+    isBestInvestment: true,
   },
   {
     id: '8',
@@ -173,6 +192,9 @@ export const watchesDatabase: Watch[] = [
     complications: [],
     category: 'Dress Watch',
     keywords: ['calatrava', 'patek', 'philippe', 'clássico', 'elegante', 'platina', 'dress'],
+    rarity: 'very_rare',
+    priceTrend: 18,
+    isBestInvestment: true,
   },
 
   // AUDEMARS PIGUET
@@ -196,6 +218,9 @@ export const watchesDatabase: Watch[] = [
     complications: ['Data'],
     category: 'Esportivo Luxo',
     keywords: ['royal', 'oak', 'audemars', 'piguet', 'octogonal', 'tapisserie', 'azul'],
+    rarity: 'very_rare',
+    priceTrend: 20,
+    isBestInvestment: true,
   },
   {
     id: '10',
@@ -217,6 +242,8 @@ export const watchesDatabase: Watch[] = [
     complications: ['Cronógrafo', 'Data'],
     category: 'Cronógrafo',
     keywords: ['royal', 'oak', 'offshore', 'audemars', 'piguet', 'cronógrafo', 'robusto'],
+    rarity: 'very_rare',
+    priceTrend: 15,
   },
 
   // TAG HEUER
@@ -240,6 +267,8 @@ export const watchesDatabase: Watch[] = [
     complications: ['Cronógrafo', 'Data'],
     category: 'Cronógrafo',
     keywords: ['carrera', 'tag', 'heuer', 'corrida', 'cronógrafo', 'velocidade'],
+    rarity: 'common',
+    priceTrend: 2,
   },
   {
     id: '12',
@@ -261,6 +290,8 @@ export const watchesDatabase: Watch[] = [
     complications: ['Cronógrafo', 'Data'],
     category: 'Cronógrafo',
     keywords: ['monaco', 'tag', 'heuer', 'quadrado', 'mcqueen', 'azul', 'icônico'],
+    rarity: 'rare',
+    priceTrend: 6,
   },
 
   // BREITLING
@@ -284,6 +315,8 @@ export const watchesDatabase: Watch[] = [
     complications: ['Cronógrafo', 'Régua de Cálculo'],
     category: 'Aviação',
     keywords: ['navitimer', 'breitling', 'piloto', 'aviação', 'régua', 'cálculo', 'azul'],
+    rarity: 'rare',
+    priceTrend: 4,
   },
   {
     id: '14',
@@ -305,6 +338,8 @@ export const watchesDatabase: Watch[] = [
     complications: ['Data'],
     category: 'Mergulho',
     keywords: ['superocean', 'breitling', 'mergulho', 'robusto', 'legibilidade', 'borracha'],
+    rarity: 'common',
+    priceTrend: 1,
   },
 
   // IWC
@@ -328,6 +363,8 @@ export const watchesDatabase: Watch[] = [
     complications: ['Cronógrafo', 'Data'],
     category: 'Aviação',
     keywords: ['pilot', 'iwc', 'aviação', 'cronógrafo', 'tradição', 'couro'],
+    rarity: 'common',
+    priceTrend: 3,
   },
   {
     id: '16',
@@ -349,6 +386,8 @@ export const watchesDatabase: Watch[] = [
     complications: ['Cronógrafo'],
     category: 'Clássico',
     keywords: ['portugieser', 'iwc', 'elegante', 'subdiais', 'clássico', 'branco'],
+    rarity: 'rare',
+    priceTrend: 5,
   },
 
   // GRAND SEIKO
@@ -372,6 +411,9 @@ export const watchesDatabase: Watch[] = [
     complications: ['Data', 'Reserva de Marcha'],
     category: 'Clássico',
     keywords: ['snowflake', 'grand', 'seiko', 'spring', 'drive', 'titânio', 'neve'],
+    rarity: 'rare',
+    priceTrend: 9,
+    isBestInvestment: true,
   },
   {
     id: '18',
@@ -393,6 +435,8 @@ export const watchesDatabase: Watch[] = [
     complications: ['Data'],
     category: 'Clássico',
     keywords: ['heritage', 'grand', 'seiko', 'tradição', 'japonês', 'acabamento', 'azul'],
+    rarity: 'common',
+    priceTrend: 4,
   },
 
   // JAEGER-LECOULTRE
@@ -416,6 +460,9 @@ export const watchesDatabase: Watch[] = [
     complications: [],
     category: 'Clássico',
     keywords: ['reverso', 'jaeger', 'lecoultre', 'art', 'deco', 'reversível', 'polo'],
+    rarity: 'very_rare',
+    priceTrend: 12,
+    isBestInvestment: true,
   },
   {
     id: '20',
@@ -437,6 +484,8 @@ export const watchesDatabase: Watch[] = [
     complications: ['Data'],
     category: 'Clássico',
     keywords: ['master', 'control', 'jaeger', 'lecoultre', 'elegância', 'precisão'],
+    rarity: 'rare',
+    priceTrend: 7,
   },
 ];
 
@@ -460,4 +509,6 @@ export const featuredWatch: Watch = {
   complications: ['Data'],
   category: 'Mergulho',
   keywords: ['tudor', 'black', 'bay', 'fifty', 'eight', 'mergulho', 'vintage'],
+  rarity: 'common',
+  priceTrend: 6,
 };

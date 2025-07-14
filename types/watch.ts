@@ -19,6 +19,9 @@ export interface Watch {
   category?: string;
   keywords?: string[];
   isFavorite?: boolean;
+  rarity?: 'common' | 'rare' | 'very_rare' | 'unicorn';
+  priceTrend?: number; // Percentage change
+  isBestInvestment?: boolean;
 }
 
 export interface IdentificationResult {
