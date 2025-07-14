@@ -21,7 +21,6 @@ export interface Watch {
   isFavorite?: boolean;
   rarity?: 'common' | 'rare' | 'very_rare' | 'unicorn';
   priceTrend?: number; // Percentage change
-  isBestInvestment?: boolean;
 }
 
 export interface IdentificationResult {

@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { Heart, TrendingUp, TrendingDown } from 'lucide-react-native';
+import { Heart } from 'lucide-react-native';
 import React from 'react';
 import { StyleSheet, Text, View, Pressable, Image } from 'react-native';
 
@@ -35,24 +35,33 @@ export default function WatchCard({ watch, size = 'medium', showRarity = false }
     if (!watch.rarity) return null;
     
     const rarityConfig = {
-      common: { emoji: '🟢', text: 'Comum', color: Colors.success },
-      rare: { emoji: '🟡', text: 'Raro', color: Colors.warning },
-      very_rare: { emoji: '🟠', text: 'Muito Raro', color: '#ff8c00' },
-      unicorn: { emoji: '🔴', text: 'Unicórnio', color: Colors.error },
+      common: { 
+        emoji: '🟢', 
+        text: 'Comum', 
+        backgroundColor: 'rgba(34, 197, 94, 0.95)',
+        textColor: '#FFFFFF'
+      },
+      rare: { 
+        emoji: '🟡', 
+        text: 'Raro', 
+        backgroundColor: 'rgba(251, 191, 36, 0.95)',
+        textColor: '#FFFFFF'
+      },
+      very_rare: { 
+        emoji: '🟠', 
+        text: 'Muito Raro', 
+        backgroundColor: 'rgba(249, 115, 22, 0.95)',
+        textColor: '#FFFFFF'
+      },
+      unicorn: { 
+        emoji: '🔴', 
+        text: 'Unicórnio', 
+        backgroundColor: 'rgba(239, 68, 68, 0.95)',
+        textColor: '#FFFFFF'
+      },
     };
     
     return rarityConfig[watch.rarity];
-  };
-
-  const getPriceTrend = () => {
-    if (!watch.priceTrend) return null;
-    
-    const isPositive = watch.priceTrend > 0;
-    return {
-      icon: isPositive ? TrendingUp : TrendingDown,
-      color: isPositive ? Colors.success : Colors.error,
-      text: `${isPositive ? '+' : ''}${watch.priceTrend}%`,
-    };
   };
 
   const cardStyles = {
@@ -74,7 +83,6 @@ export default function WatchCard({ watch, size = 'medium', showRarity = false }
   };
 
   const rarityInfo = getRarityInfo();
-  const priceTrend = getPriceTrend();
 
   return (
     <Pressable
@@ -89,17 +97,16 @@ export default function WatchCard({ watch, size = 'medium', showRarity = false }
         
         {/* Rarity Badge */}
         {showRarity && rarityInfo && (
-          <View style={[styles.rarityBadge, { backgroundColor: rarityInfo.color + '20' }]}>
-            <Text style={styles.rarityText}>
+          <View style={[
+            styles.rarityBadge, 
+            { backgroundColor: rarityInfo.backgroundColor }
+          ]}>
+            <Text style={[
+              styles.rarityText,
+              { color: rarityInfo.textColor }
+            ]}>
               {rarityInfo.emoji} {rarityInfo.text}
             </Text>
-          </View>
-        )}
-        
-        {/* Best Investment Badge */}
-        {watch.isBestInvestment && (
-          <View style={styles.investmentBadge}>
-            <Text style={styles.investmentText}>💎 Melhor Investimento</Text>
           </View>
         )}
       </View>
@@ -126,17 +133,7 @@ export default function WatchCard({ watch, size = 'medium', showRarity = false }
         )}
         
         <View style={styles.footer}>
-          <View style={styles.priceContainer}>
-            <Text style={styles.price}>{watch.price}</Text>
-            {priceTrend && (
-              <View style={styles.trendContainer}>
-                <priceTrend.icon size={14} color={priceTrend.color} />
-                <Text style={[styles.trendText, { color: priceTrend.color }]}>
-                  {priceTrend.text}
-                </Text>
-              </View>
-            )}
-          </View>
+          <Text style={styles.price}>{watch.price}</Text>
           {size !== 'small' && (
             <Text style={styles.reference}>Ref: {watch.reference}</Text>
           )}
@@ -189,27 +186,19 @@ const styles = StyleSheet.create({
     right: 8,
     paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.9)',
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+    shadowColor: Colors.black,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 2,
   },
   rarityText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '600',
-    color: Colors.text,
-  },
-  investmentBadge: {
-    position: 'absolute',
-    bottom: 8,
-    left: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    backgroundColor: 'rgba(0,0,0,0.8)',
-  },
-  investmentText: {
-    fontSize: 10,
-    fontWeight: '600',
-    color: Colors.white,
+    letterSpacing: 0.5,
   },
   content: {
     padding: 12,
@@ -251,25 +240,11 @@ const styles = StyleSheet.create({
   footer: {
     marginTop: 4,
   },
-  priceContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 4,
-  },
   price: {
     fontSize: 15,
     fontWeight: '600',
     color: Colors.text,
-  },
-  trendContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  trendText: {
-    fontSize: 12,
-    fontWeight: '600',
-    marginLeft: 4,
+    marginBottom: 4,
   },
   reference: {
     fontSize: 12,

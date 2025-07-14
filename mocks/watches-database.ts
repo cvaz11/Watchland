@@ -22,9 +22,8 @@ export const watchesDatabase: Watch[] = [
     complications: ['Data'],
     category: 'Mergulho',
     keywords: ['submariner', 'rolex', 'mergulho', 'preto', 'aço', 'oyster', 'automático'],
-    rarity: 'rare',
+    rarity: 'very_rare',
     priceTrend: 8,
-    isBestInvestment: true,
   },
   {
     id: '2',
@@ -46,9 +45,8 @@ export const watchesDatabase: Watch[] = [
     complications: ['GMT', 'Data'],
     category: 'GMT',
     keywords: ['gmt', 'master', 'rolex', 'pepsi', 'vermelho', 'azul', 'viagem'],
-    rarity: 'very_rare',
+    rarity: 'unicorn',
     priceTrend: 12,
-    isBestInvestment: true,
   },
   {
     id: '3',
@@ -72,7 +70,6 @@ export const watchesDatabase: Watch[] = [
     keywords: ['daytona', 'rolex', 'cronógrafo', 'corrida', 'branco', 'taquímetro'],
     rarity: 'unicorn',
     priceTrend: 15,
-    isBestInvestment: true,
   },
   {
     id: '4',
@@ -94,7 +91,7 @@ export const watchesDatabase: Watch[] = [
     complications: ['Data'],
     category: 'Clássico',
     keywords: ['datejust', 'rolex', 'clássico', 'azul', 'jubilee', 'elegante'],
-    rarity: 'common',
+    rarity: 'rare',
     priceTrend: 5,
   },
 
@@ -121,7 +118,6 @@ export const watchesDatabase: Watch[] = [
     keywords: ['speedmaster', 'omega', 'moonwatch', 'lua', 'cronógrafo', 'nasa'],
     rarity: 'rare',
     priceTrend: 7,
-    isBestInvestment: true,
   },
   {
     id: '6',
@@ -170,7 +166,6 @@ export const watchesDatabase: Watch[] = [
     keywords: ['nautilus', 'patek', 'philippe', 'azul', 'escotilha', 'luxo', 'esportivo'],
     rarity: 'unicorn',
     priceTrend: 25,
-    isBestInvestment: true,
   },
   {
     id: '8',
@@ -194,7 +189,6 @@ export const watchesDatabase: Watch[] = [
     keywords: ['calatrava', 'patek', 'philippe', 'clássico', 'elegante', 'platina', 'dress'],
     rarity: 'very_rare',
     priceTrend: 18,
-    isBestInvestment: true,
   },
 
   // AUDEMARS PIGUET
@@ -220,7 +214,6 @@ export const watchesDatabase: Watch[] = [
     keywords: ['royal', 'oak', 'audemars', 'piguet', 'octogonal', 'tapisserie', 'azul'],
     rarity: 'very_rare',
     priceTrend: 20,
-    isBestInvestment: true,
   },
   {
     id: '10',
@@ -413,7 +406,6 @@ export const watchesDatabase: Watch[] = [
     keywords: ['snowflake', 'grand', 'seiko', 'spring', 'drive', 'titânio', 'neve'],
     rarity: 'rare',
     priceTrend: 9,
-    isBestInvestment: true,
   },
   {
     id: '18',
@@ -462,7 +454,6 @@ export const watchesDatabase: Watch[] = [
     keywords: ['reverso', 'jaeger', 'lecoultre', 'art', 'deco', 'reversível', 'polo'],
     rarity: 'very_rare',
     priceTrend: 12,
-    isBestInvestment: true,
   },
   {
     id: '20',
