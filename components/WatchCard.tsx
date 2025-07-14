@@ -95,7 +95,6 @@ export default function WatchCard({ watch, size = 'medium', showRarity = false }
           style={[styles.image, cardStyles[size].image]}
         />
         
-        {/* Rarity Badge */}
         {showRarity && rarityInfo && (
           <View style={[
             styles.rarityBadge, 
