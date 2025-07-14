@@ -83,7 +83,6 @@ export default function CatalogScreen() {
     setIsSearchingWithAI(true);
     try {
       const aiResults = await searchWithAI(query);
-      // AI results would be processed here
       console.log('Busca com IA:', aiResults);
     } catch (error) {
       console.error('Erro na busca com IA:', error);
@@ -206,7 +205,6 @@ export default function CatalogScreen() {
         numColumns={1}
       />
 
-      {/* Examples Modal */}
       <Modal
         visible={showExamples}
         transparent
@@ -240,10 +238,10 @@ export default function CatalogScreen() {
               <View style={styles.modalTip}>
                 <Text style={styles.tipTitle}>🎯 Dicas para melhor busca:</Text>
                 <Text style={styles.tipText}>
-                  • Mencione cor: "preto", "dourado", "azul"
-                  {'\n'}• Inclua faixa de preço: "até R$ 10.000"
-                  {'\n'}• Descreva o estilo: "esportivo", "clássico", "vintage"
-                  {'\n'}• Especifique uso: "para trabalho", "mergulho", "viagem"
+                  • Mencione cor: "preto", "dourado", "azul"{'\n'}
+                  • Inclua faixa de preço: "até R$ 10.000"{'\n'}
+                  • Descreva o estilo: "esportivo", "clássico", "vintage"{'\n'}
+                  • Especifique uso: "para trabalho", "mergulho", "viagem"
                 </Text>
               </View>
             </ScrollView>
