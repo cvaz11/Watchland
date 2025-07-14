@@ -134,7 +134,7 @@ export default function WatchCard({ watch, size = 'medium', showRarity = false }
           </Pressable>
         </View>
         
-        {size === 'large' && (
+        {size === 'large' && watch.description && (
           <Text style={styles.description} numberOfLines={2}>
             {watch.description}
           </Text>
@@ -142,7 +142,7 @@ export default function WatchCard({ watch, size = 'medium', showRarity = false }
         
         <View style={styles.footer}>
           <Text style={styles.price}>{watch.price}</Text>
-          {size !== 'small' && (
+          {size !== 'small' && watch.reference && (
             <Text style={styles.reference}>Ref: {watch.reference}</Text>
           )}
         </View>

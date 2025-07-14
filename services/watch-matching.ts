@@ -9,41 +9,41 @@ export function calculateMatchScore(watch: Watch, aiAnalysis: AIAnalysis): numbe
 
   // Brand matching (highest weight)
   maxScore += 40;
-  if (aiAnalysis.brand && watch.brand.toLowerCase().includes(aiAnalysis.brand?.toLowerCase() || '')) {
+  if (aiAnalysis?.brand && watch.brand.toLowerCase().includes(aiAnalysis.brand.toLowerCase())) {
     score += 40;
-  } else if (aiAnalysis.brand && watch.keywords?.some(k => k.includes(aiAnalysis.brand?.toLowerCase() || ''))) {
+  } else if (aiAnalysis?.brand && watch.keywords?.some(k => k.includes(aiAnalysis.brand?.toLowerCase() || ''))) {
     score += 20;
   }
 
   // Model matching
   maxScore += 30;
-  if (aiAnalysis.model && watch.model.toLowerCase().includes(aiAnalysis.model?.toLowerCase() || '')) {
+  if (aiAnalysis?.model && watch.model.toLowerCase().includes(aiAnalysis.model.toLowerCase())) {
     score += 30;
-  } else if (aiAnalysis.model && watch.keywords?.some(k => k.includes(aiAnalysis.model?.toLowerCase() || ''))) {
+  } else if (aiAnalysis?.model && watch.keywords?.some(k => k.includes(aiAnalysis.model?.toLowerCase() || ''))) {
     score += 15;
   }
 
   // Case material matching
   maxScore += 10;
-  if (aiAnalysis.caseMaterial && watch.caseMaterial?.toLowerCase().includes(aiAnalysis.caseMaterial.toLowerCase())) {
+  if (aiAnalysis?.caseMaterial && watch.caseMaterial?.toLowerCase().includes(aiAnalysis.caseMaterial.toLowerCase())) {
     score += 10;
   }
 
   // Dial color matching
   maxScore += 10;
-  if (aiAnalysis.dialColor && watch.dialColor?.toLowerCase().includes(aiAnalysis.dialColor.toLowerCase())) {
+  if (aiAnalysis?.dialColor && watch.dialColor?.toLowerCase().includes(aiAnalysis.dialColor.toLowerCase())) {
     score += 10;
   }
 
   // Bracelet type matching
   maxScore += 5;
-  if (aiAnalysis.braceletType && watch.braceletType?.toLowerCase().includes(aiAnalysis.braceletType.toLowerCase())) {
+  if (aiAnalysis?.braceletType && watch.braceletType?.toLowerCase().includes(aiAnalysis.braceletType.toLowerCase())) {
     score += 5;
   }
 
   // Complications matching
   maxScore += 5;
-  if (aiAnalysis.complications && aiAnalysis.complications.length > 0) {
+  if (aiAnalysis?.complications && aiAnalysis.complications.length > 0) {
     const matchingComplications = aiAnalysis.complications.filter(comp =>
       watch.complications?.some(wComp => wComp.toLowerCase().includes(comp.toLowerCase()))
     );
@@ -58,7 +58,7 @@ export function findMatchingWatches(aiAnalysis: AIAnalysis): IdentificationResul
     id: `${Date.now()}-${Math.random()}`,
     watch,
     confidence: calculateMatchScore(watch, aiAnalysis),
-    aiAnalysis: aiAnalysis.description,
+    aiAnalysis: aiAnalysis?.description || 'Análise não disponível',
     timestamp: new Date().toISOString(),
     imageUri: '', // Will be set by caller
   }));
