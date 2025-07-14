@@ -9,17 +9,17 @@ export function calculateMatchScore(watch: Watch, aiAnalysis: AIAnalysis): numbe
 
   // Brand matching (highest weight)
   maxScore += 40;
-  if (aiAnalysis.brand && watch.brand.toLowerCase().includes(aiAnalysis.brand.toLowerCase())) {
+  if (aiAnalysis.brand && watch.brand.toLowerCase().includes(aiAnalysis.brand?.toLowerCase() || '')) {
     score += 40;
-  } else if (aiAnalysis.brand && watch.keywords?.some(k => k.includes(aiAnalysis.brand.toLowerCase()))) {
+  } else if (aiAnalysis.brand && watch.keywords?.some(k => k.includes(aiAnalysis.brand?.toLowerCase() || ''))) {
     score += 20;
   }
 
   // Model matching
   maxScore += 30;
-  if (aiAnalysis.model && watch.model.toLowerCase().includes(aiAnalysis.model.toLowerCase())) {
+  if (aiAnalysis.model && watch.model.toLowerCase().includes(aiAnalysis.model?.toLowerCase() || '')) {
     score += 30;
-  } else if (aiAnalysis.model && watch.keywords?.some(k => k.includes(aiAnalysis.model.toLowerCase()))) {
+  } else if (aiAnalysis.model && watch.keywords?.some(k => k.includes(aiAnalysis.model?.toLowerCase() || ''))) {
     score += 15;
   }
 
