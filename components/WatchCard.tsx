@@ -39,25 +39,25 @@ export default function WatchCard({ watch, size = 'medium', showRarity = false }
       common: { 
         emoji: '🟢', 
         text: 'Comum',
-        gradientColors: ['rgba(34, 197, 94, 0.9)', 'rgba(22, 163, 74, 0.85)'] as const,
+        gradientColors: ['rgba(34, 197, 94, 0.9)', 'rgba(22, 163, 74, 0.85)'],
         shadowColor: 'rgba(34, 197, 94, 0.4)',
       },
       rare: { 
         emoji: '🟡', 
         text: 'Raro',
-        gradientColors: ['rgba(251, 191, 36, 0.9)', 'rgba(245, 158, 11, 0.85)'] as const,
+        gradientColors: ['rgba(251, 191, 36, 0.9)', 'rgba(245, 158, 11, 0.85)'],
         shadowColor: 'rgba(251, 191, 36, 0.4)',
       },
       very_rare: { 
         emoji: '🟠', 
         text: 'Muito Raro',
-        gradientColors: ['rgba(249, 115, 22, 0.9)', 'rgba(234, 88, 12, 0.85)'] as const,
+        gradientColors: ['rgba(249, 115, 22, 0.9)', 'rgba(234, 88, 12, 0.85)'],
         shadowColor: 'rgba(249, 115, 22, 0.4)',
       },
       unicorn: { 
         emoji: '🔴', 
         text: 'Unicórnio',
-        gradientColors: ['rgba(239, 68, 68, 0.9)', 'rgba(220, 38, 38, 0.85)'] as const,
+        gradientColors: ['rgba(239, 68, 68, 0.9)', 'rgba(220, 38, 38, 0.85)'],
         shadowColor: 'rgba(239, 68, 68, 0.4)',
       },
     };
@@ -99,7 +99,7 @@ export default function WatchCard({ watch, size = 'medium', showRarity = false }
         {showRarity && rarityInfo && (
           <View style={styles.rarityBadgeContainer}>
             <LinearGradient
-              colors={rarityInfo.gradientColors}
+              colors={rarityInfo.gradientColors as [string, string, ...string[]]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={[

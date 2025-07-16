@@ -1,7 +1,7 @@
 import { useRouter } from 'expo-router';
 import { CameraView, CameraType, useCameraPermissions } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
-import { Camera, Image as ImageIcon, X, Zap, RotateCcw } from 'lucide-react-native';
+import { Camera, Image as ImageIcon, X, Zap, RotateCcw, AlertCircle, CheckCircle } from 'lucide-react-native';
 import React, { useState, useRef } from 'react';
 import { StyleSheet, Text, View, Pressable, ActivityIndicator, Image, Platform, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -10,9 +10,16 @@ import Button from '@/components/Button';
 import Colors from '@/constants/colors';
 import { useUserStore } from '@/store/user-store';
 import { useIdentificationStore } from '@/store/identification-store';
-import { analyzeWatchImage } from '@/services/ai-identification';
+import { analyzeWatchImage, validateImageQuality } from '@/services/ai-identification';
 import { findMatchingWatches } from '@/services/watch-matching';
-import { compressImage, convertUriToBase64 } from '@/utils/image-utils';
+import { compressImage } from '@/utils/image-utils';
+
+interface AnalysisStep {
+  id: string;
+  title: string;
+  status: 'pending' | 'processing' | 'completed' | 'error';
+  description: string;
+}
 
 export default function CameraScreen() {
   const insets = useSafeAreaInsets();
@@ -22,6 +29,7 @@ export default function CameraScreen() {
   const [facing, setFacing] = useState<CameraType>('back');
   const [flash, setFlash] = useState(false);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
+  const [analysisSteps, setAnalysisSteps] = useState<AnalysisStep[]>([]);
   const { incrementIdentifications } = useUserStore();
   const { 
     isAnalyzing, 
@@ -30,6 +38,41 @@ export default function CameraScreen() {
     setCurrentAnalysis,
     addToHistory 
   } = useIdentificationStore();
+
+  const initializeAnalysisSteps = (): AnalysisStep[] => [
+    {
+      id: 'quality',
+      title: 'Validando qualidade da imagem',
+      status: 'pending',
+      description: 'Verificando nitidez, iluminação e enquadramento'
+    },
+    {
+      id: 'processing',
+      title: 'Processando com IA avançada',
+      status: 'pending',
+      description: 'Analisando marca, modelo e características'
+    },
+    {
+      id: 'matching',
+      title: 'Buscando correspondências',
+      status: 'pending',
+      description: 'Comparando com base de dados de relógios'
+    },
+    {
+      id: 'results',
+      title: 'Preparando resultados',
+      status: 'pending',
+      description: 'Organizando informações encontradas'
+    }
+  ];
+
+  const updateAnalysisStep = (stepId: string, status: AnalysisStep['status'], description?: string) => {
+    setAnalysisSteps(prev => prev.map(step => 
+      step.id === stepId 
+        ? { ...step, status, description: description || step.description }
+        : step
+    ));
+  };
 
   const handleClose = () => {
     router.back();
@@ -85,17 +128,35 @@ export default function CameraScreen() {
   const analyzeImage = async (imageUri: string) => {
     setAnalyzing(true);
     setCurrentAnalysis(null);
+    const steps = initializeAnalysisSteps();
+    setAnalysisSteps(steps);
     
     try {
-      // Compress and convert image to base64
+      // Step 1: Validate image quality
+      updateAnalysisStep('quality', 'processing');
       const compressedBase64 = await compressImage(imageUri);
       
-      // Analyze with AI
+      const qualityCheck = await validateImageQuality(compressedBase64);
+      if (!qualityCheck.isValid && qualityCheck.issues.length > 0) {
+        updateAnalysisStep('quality', 'completed', `Qualidade: ${qualityCheck.issues.join(', ')}`);
+        // Continue anyway but warn user
+      } else {
+        updateAnalysisStep('quality', 'completed', 'Imagem com boa qualidade para análise');
+      }
+
+      // Step 2: AI Analysis
+      updateAnalysisStep('processing', 'processing');
       const aiAnalysis = await analyzeWatchImage(compressedBase64);
       setCurrentAnalysis(aiAnalysis);
+      updateAnalysisStep('processing', 'completed', 'Análise de IA concluída com sucesso');
       
-      // Find matching watches
+      // Step 3: Find matches
+      updateAnalysisStep('matching', 'processing');
       const matches = findMatchingWatches(aiAnalysis);
+      updateAnalysisStep('matching', 'completed', `${matches.length} correspondências encontradas`);
+      
+      // Step 4: Prepare results
+      updateAnalysisStep('results', 'processing');
       
       // Add to history if we have matches
       if (matches.length > 0) {
@@ -105,17 +166,28 @@ export default function CameraScreen() {
         incrementIdentifications();
       }
       
-      // Navigate to results
-      router.push({
-        pathname: '/identification-results',
-        params: {
-          imageUri,
-          analysisId: Date.now().toString(),
-        },
-      });
+      updateAnalysisStep('results', 'completed', 'Resultados preparados');
+      
+      // Small delay to show completion
+      setTimeout(() => {
+        router.push({
+          pathname: '/identification-results',
+          params: {
+            imageUri,
+            analysisId: Date.now().toString(),
+          },
+        });
+      }, 1000);
       
     } catch (error) {
       console.error('Erro na análise:', error);
+      
+      // Update failed step
+      const currentStep = analysisSteps.find(step => step.status === 'processing');
+      if (currentStep) {
+        updateAnalysisStep(currentStep.id, 'error', 'Falha na análise');
+      }
+      
       Alert.alert(
         'Erro na Análise',
         'Não foi possível analisar a imagem. Verifique sua conexão e tente novamente.',
@@ -132,6 +204,20 @@ export default function CameraScreen() {
   const resetCamera = () => {
     setCapturedImage(null);
     setCurrentAnalysis(null);
+    setAnalysisSteps([]);
+  };
+
+  const getStepIcon = (status: AnalysisStep['status']) => {
+    switch (status) {
+      case 'completed':
+        return <CheckCircle size={20} color={Colors.success} />;
+      case 'processing':
+        return <ActivityIndicator size={20} color={Colors.primary} />;
+      case 'error':
+        return <AlertCircle size={20} color={Colors.error} />;
+      default:
+        return <View style={styles.pendingDot} />;
+    }
   };
 
   if (!permission) {
@@ -143,7 +229,7 @@ export default function CameraScreen() {
       <View style={[styles.container, styles.centerContent]}>
         <Text style={styles.permissionTitle}>Acesso à Câmera Necessário</Text>
         <Text style={styles.permissionText}>
-          Precisamos do acesso à câmera para identificar relógios. 
+          Precisamos do acesso à câmera para identificar relógios usando IA avançada. 
           Por favor, conceda a permissão para continuar.
         </Text>
         <Button
@@ -162,7 +248,7 @@ export default function CameraScreen() {
           <X size={24} color={Colors.white} />
         </Pressable>
         <Text style={styles.headerTitle}>
-          {isAnalyzing ? 'Analisando com IA...' : 'Identificar Relógio'}
+          {isAnalyzing ? '🤖 Analisando com IA...' : '📸 Identificar Relógio'}
         </Text>
         <View style={styles.placeholder} />
       </View>
@@ -183,7 +269,10 @@ export default function CameraScreen() {
                 <View style={[styles.frameCorner, styles.frameCornerBottomRight]} />
               </View>
               <Text style={styles.frameInstruction}>
-                Posicione o relógio no centro do círculo
+                Posicione o relógio no centro do quadro
+              </Text>
+              <Text style={styles.frameSubInstruction}>
+                IA avançada analisará marca, modelo e características
               </Text>
             </View>
           </CameraView>
@@ -217,12 +306,13 @@ export default function CameraScreen() {
           </View>
 
           <View style={styles.instructions}>
-            <Text style={styles.instructionsTitle}>Como obter os melhores resultados:</Text>
+            <Text style={styles.instructionsTitle}>🎯 Dicas para melhor identificação:</Text>
             <Text style={styles.instructionsText}>
-              • Posicione o mostrador do relógio claramente no quadro{'\n'}
-              • Garanta boa iluminação{'\n'}
+              • Posicione o mostrador claramente visível{'\n'}
+              • Garanta boa iluminação sem reflexos{'\n'}
               • Mantenha a câmera estável{'\n'}
-              • Remova reflexos se possível
+              • Inclua a marca/logo se possível{'\n'}
+              • Evite sombras sobre o relógio
             </Text>
           </View>
         </>
@@ -232,16 +322,37 @@ export default function CameraScreen() {
           
           {isAnalyzing ? (
             <View style={styles.analyzingContainer}>
-              <ActivityIndicator size="large" color={Colors.primary} />
-              <Text style={styles.analyzingText}>Analisando com IA...</Text>
+              <Text style={styles.analyzingTitle}>🤖 Análise Inteligente em Andamento</Text>
               <Text style={styles.analyzingSubtext}>
-                Nossa IA está identificando a marca, modelo e especificações.
+                Nossa IA está processando sua imagem com tecnologia avançada
               </Text>
+              
+              <View style={styles.stepsContainer}>
+                {analysisSteps.map((step, index) => (
+                  <View key={step.id} style={styles.stepItem}>
+                    <View style={styles.stepIcon}>
+                      {getStepIcon(step.status)}
+                    </View>
+                    <View style={styles.stepContent}>
+                      <Text style={[
+                        styles.stepTitle,
+                        step.status === 'completed' && styles.stepTitleCompleted,
+                        step.status === 'error' && styles.stepTitleError,
+                      ]}>
+                        {step.title}
+                      </Text>
+                      <Text style={styles.stepDescription}>
+                        {step.description}
+                      </Text>
+                    </View>
+                  </View>
+                ))}
+              </View>
             </View>
           ) : (
             <View style={styles.resultActions}>
               <Button
-                title="Tentar Novamente"
+                title="📸 Tentar Novamente"
                 onPress={resetCamera}
                 variant="outline"
                 fullWidth
@@ -271,7 +382,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 16,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'rgba(0,0,0,0.8)',
   },
   closeButton: {
     width: 40,
@@ -341,9 +452,16 @@ const styles = StyleSheet.create({
   frameInstruction: {
     color: Colors.white,
     fontSize: 16,
-    fontWeight: '500',
+    fontWeight: '600',
     marginTop: 20,
     textAlign: 'center',
+  },
+  frameSubInstruction: {
+    color: Colors.white,
+    fontSize: 14,
+    marginTop: 8,
+    textAlign: 'center',
+    opacity: 0.8,
   },
   cameraControls: {
     flexDirection: 'row',
@@ -351,7 +469,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 20,
     paddingHorizontal: 20,
-    backgroundColor: 'rgba(0,0,0,0.8)',
+    backgroundColor: 'rgba(0,0,0,0.9)',
   },
   captureContainer: {
     alignItems: 'center',
@@ -426,21 +544,64 @@ const styles = StyleSheet.create({
   },
   analyzingContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
     padding: 20,
   },
-  analyzingText: {
-    fontSize: 18,
+  analyzingTitle: {
+    fontSize: 20,
     fontWeight: '600',
     color: Colors.text,
-    marginTop: 16,
+    textAlign: 'center',
     marginBottom: 8,
   },
   analyzingSubtext: {
     fontSize: 14,
     color: Colors.textLight,
     textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: 32,
+  },
+  stepsContainer: {
+    flex: 1,
+  },
+  stepItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 24,
+    paddingHorizontal: 16,
+  },
+  stepIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: Colors.gray[100],
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  pendingDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: Colors.gray[400],
+  },
+  stepContent: {
+    flex: 1,
+  },
+  stepTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: Colors.text,
+    marginBottom: 4,
+  },
+  stepTitleCompleted: {
+    color: Colors.success,
+  },
+  stepTitleError: {
+    color: Colors.error,
+  },
+  stepDescription: {
+    fontSize: 14,
+    color: Colors.textLight,
     lineHeight: 20,
   },
   resultActions: {
