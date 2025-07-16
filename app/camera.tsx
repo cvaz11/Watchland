@@ -80,8 +80,6 @@ export default function CameraScreen() {
     router.back();
   };
 
-
-
   const toggleCameraFacing = () => {
     setFacing(current => (current === 'back' ? 'front' : 'back'));
   };
@@ -130,7 +128,6 @@ export default function CameraScreen() {
   };
 
   const analyzeImage = async (imageUri: string) => {
-
     setAnalyzing(true);
     setCurrentAnalysis(null);
     const steps = initializeAnalysisSteps();
@@ -225,20 +222,6 @@ export default function CameraScreen() {
     }
   };
 
-  const getConfigurationStatus = () => {
-    const statuses = [];
-    if (config.isOpenAIConfigured) {
-      statuses.push(config.openaiValid ? '🧠 OpenAI ✅' : '🧠 OpenAI ⚠️');
-    }
-    if (config.isSupabaseConfigured) {
-      statuses.push(config.supabaseValid ? '🗄️ Supabase ✅' : '🗄️ Supabase ⚠️');
-    }
-    if (statuses.length === 0) {
-      return '❌ Nenhuma API configurada';
-    }
-    return statuses.join(' | ');
-  };
-
   if (!permission) {
     return <View />;
   }
@@ -291,7 +274,7 @@ export default function CameraScreen() {
                 Posicione o relógio no centro do quadro
               </Text>
               <Text style={styles.frameSubInstruction}>
-                {getConfigurationStatus()}
+                🤖 IA integrada pronta para análise
               </Text>
             </View>
           </CameraView>
@@ -333,13 +316,6 @@ export default function CameraScreen() {
               • Inclua a marca/logo se possível{"\n"}
               • Evite sombras sobre o relógio
             </Text>
-            {!config.isConfigured && (
-              <View style={styles.apiWarning}>
-                <Text style={styles.apiWarningText}>
-                  ⚠️ Configure pelo menos uma API para identificação automática
-                </Text>
-              </View>
-            )}
           </View>
         </>
       ) : (
@@ -422,6 +398,9 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
     color: Colors.white,
+  },
+  placeholder: {
+    width: 40,
   },
   settingsButton: {
     width: 40,
