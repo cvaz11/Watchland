@@ -91,8 +91,8 @@ IMPORTANTE: Retorne apenas o JSON válido, sem texto adicional.`;
         
         // Validate and structure the response
         return {
-          brand: analysis.brand || null,
-          model: analysis.model || null,
+          brand: analysis.brand || undefined,
+          model: analysis.model || undefined,
           caseMaterial: analysis.caseMaterial || 'Não identificado',
           dialColor: analysis.dialColor || 'Não identificado',
           braceletType: analysis.braceletType || 'Não identificado',
@@ -108,8 +108,8 @@ IMPORTANTE: Retorne apenas o JSON válido, sem texto adicional.`;
 
     // Fallback: return the full completion as description with basic structure
     return {
-      brand: null,
-      model: null,
+      brand: undefined,
+      model: undefined,
       caseMaterial: 'Análise em andamento',
       dialColor: 'Análise em andamento',
       braceletType: 'Análise em andamento',
