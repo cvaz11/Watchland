@@ -344,14 +344,10 @@ export default function CameraScreen() {
           <View style={styles.instructions}>
             <Text style={styles.instructionsTitle}>🎯 Dicas para melhor identificação:</Text>
             <Text style={styles.instructionsText}>
-              • Posicione o mostrador claramente visível{'
-'}
-              • Garanta boa iluminação sem reflexos{'
-'}
-              • Mantenha a câmera estável{'
-'}
-              • Inclua a marca/logo se possível{'
-'}
+              • Posicione o mostrador claramente visível{"\n"}
+              • Garanta boa iluminação sem reflexos{"\n"}
+              • Mantenha a câmera estável{"\n"}
+              • Inclua a marca/logo se possível{"\n"}
               • Evite sombras sobre o relógio
             </Text>
             {!config.isConfigured && (

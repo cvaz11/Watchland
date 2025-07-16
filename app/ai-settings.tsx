@@ -389,14 +389,10 @@ export default function AISettingsScreen() {
         <View style={styles.warningSection}>
           <Text style={styles.warningTitle}>⚠️ Importante</Text>
           <Text style={styles.warningText}>
-            • Suas chaves são armazenadas localmente no dispositivo{'
-'}
-            • Nunca compartilhe suas chaves com terceiros{'
-'}
-            • O uso das APIs pode gerar custos{'
-'}
-            • Sem as APIs, você ainda pode usar busca manual{'
-'}
+            • Suas chaves são armazenadas localmente no dispositivo{"\n"}
+            • Nunca compartilhe suas chaves com terceiros{"\n"}
+            • O uso das APIs pode gerar custos{"\n"}
+            • Sem as APIs, você ainda pode usar busca manual{"\n"}
             • Supabase oferece tier gratuito generoso
           </Text>
         </View>
