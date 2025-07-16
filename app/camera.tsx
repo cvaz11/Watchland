@@ -252,7 +252,7 @@ export default function CameraScreen() {
         <Text style={styles.headerTitle}>
           {isAnalyzing ? '🤖 Analisando com IA...' : '📸 Identificar Relógio'}
         </Text>
-        <View style={styles.placeholder} />
+        <View style={styles.headerPlaceholder} />
       </View>
 
       {!capturedImage ? (
@@ -399,16 +399,8 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: Colors.white,
   },
-  placeholder: {
+  headerPlaceholder: {
     width: 40,
-  },
-  settingsButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   camera: {
     flex: 1,
@@ -528,19 +520,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: Colors.textLight,
     lineHeight: 22,
-  },
-  apiWarning: {
-    marginTop: 12,
-    padding: 12,
-    backgroundColor: Colors.warning + '20',
-    borderRadius: 8,
-    borderLeftWidth: 4,
-    borderLeftColor: Colors.warning,
-  },
-  apiWarningText: {
-    fontSize: 14,
-    color: Colors.warning,
-    fontWeight: '500',
   },
   permissionTitle: {
     fontSize: 20,

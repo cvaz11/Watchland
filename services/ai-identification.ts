@@ -29,38 +29,39 @@ export async function analyzeWatchImage(imageBase64: string): Promise<AIAnalysis
 }
 
 async function analyzeWithProxy(imageBase64: string): Promise<AIAnalysis> {
-  const prompt = `Você é um especialista em relógios de luxo. Analise esta imagem de relógio com máxima precisão e identifique:
+  const prompt = `Você é um especialista em relógios de luxo com 20 anos de experiência. Analise esta imagem de relógio com máxima precisão e identifique:
 
-🔍 ANÁLISE DETALHADA:
-1. MARCA - Procure logotipos, texto no mostrador, coroa, fecho da pulseira
-2. MODELO - Identifique características distintivas, formato da caixa, subdiais
-3. MATERIAL DA CAIXA - Aço, ouro amarelo/rosa/branco, titânio, platina, cerâmica
-4. COR DO MOSTRADOR - Seja específico: preto, branco, azul, verde, prata, etc.
-5. TIPO DE PULSEIRA - Aço (oyster, jubilee, presidente), couro, borracha, NATO
-6. COMPLICAÇÕES - Cronógrafo, GMT, data, dia/mês, fases da lua, etc.
+🔍 ANÁLISE DETALHADA OBRIGATÓRIA:
+1. MARCA - Procure logotipos, texto no mostrador, coroa, fecho da pulseira, assinatura
+2. MODELO - Identifique características distintivas, formato da caixa, subdiais, complicações
+3. MATERIAL DA CAIXA - Aço, ouro amarelo/rosa/branco, titânio, platina, cerâmica, bronze
+4. COR DO MOSTRADOR - Seja específico: preto, branco, azul navy, verde, prata, champagne, etc.
+5. TIPO DE PULSEIRA - Aço (oyster, jubilee, presidente), couro, borracha, NATO, mesh
+6. COMPLICAÇÕES - Cronógrafo, GMT, data, dia/mês, fases da lua, reserva de marcha
 7. TAMANHO ESTIMADO - Baseado em proporções visuais (36mm, 40mm, 42mm, etc.)
 8. CARACTERÍSTICAS ESPECIAIS - Luneta, índices, ponteiros, textura do mostrador
 
-⚡ INSTRUÇÕES ESPECÍFICAS:
+⚡ INSTRUÇÕES CRÍTICAS:
 - Se não conseguir identificar com certeza, mencione as possibilidades mais prováveis
 - Seja honesto sobre o nível de confiança (alta/média/baixa)
 - Foque em detalhes visíveis na imagem
 - Considere ângulo, iluminação e qualidade da foto
+- Para marcas famosas (Rolex, Omega, Patek Philippe), seja extra cuidadoso
 
-📋 RESPONDA EM JSON VÁLIDO:
+📋 RESPONDA APENAS EM JSON VÁLIDO:
 {
-  "brand": "marca identificada ou deixe vazio se incerto",
-  "model": "modelo específico ou deixe vazio se incerto",
+  "brand": "marca identificada ou vazio se incerto",
+  "model": "modelo específico ou vazio se incerto", 
   "caseMaterial": "material da caixa",
   "dialColor": "cor específica do mostrador",
   "braceletType": "tipo de pulseira/bracelete",
   "complications": ["lista", "de", "complicações", "visíveis"],
   "estimatedSize": "tamanho estimado com unidade",
   "confidence": "alta/média/baixa",
-  "description": "análise detalhada do que você observa na imagem, incluindo características distintivas, estado de conservação, e qualquer detalhe relevante para identificação"
+  "description": "análise detalhada do que você observa na imagem, incluindo características distintivas, estado de conservação, e qualquer detalhe relevante para identificação. Seja específico sobre por que você chegou a essas conclusões."
 }
 
-IMPORTANTE: Retorne apenas o JSON válido, sem texto adicional.`;
+IMPORTANTE: Retorne apenas o JSON válido, sem texto adicional antes ou depois.`;
 
   const response = await fetch(AI_API_URL, {
     method: 'POST',

@@ -68,4 +68,3 @@ export interface IdentificationSettings {
   showConfidence: boolean;
   saveHistory: boolean;
 }
-
