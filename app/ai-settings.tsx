@@ -126,18 +126,18 @@ export default function AISettingsScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>🔑 Configuração da API</Text>
           <Text style={styles.sectionDescription}>
-            Configure sua chave da API para habilitar a identificação automática de relógios com IA.
+            Configure sua chave da API OpenAI para habilitar a identificação automática de relógios com IA.
           </Text>
 
           <View style={styles.inputContainer}>
-            <Text style={styles.inputLabel}>Chave da API</Text>
+            <Text style={styles.inputLabel}>Chave da API OpenAI</Text>
             <View style={styles.inputWrapper}>
               <Key size={20} color={Colors.gray[500]} />
               <TextInput
                 style={styles.input}
                 value={apiKey}
                 onChangeText={setApiKey}
-                placeholder="Insira sua chave da API aqui..."
+                placeholder="sk-..."
                 placeholderTextColor={Colors.gray[500]}
                 secureTextEntry={!showKey}
                 autoCapitalize="none"
