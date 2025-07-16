@@ -1,6 +1,9 @@
 import { AIAnalysis } from '@/types/watch';
+import { useAPIStore } from '@/store/api-store';
 
+// Use the proxy API or direct OpenAI API
 const AI_API_URL = 'https://toolkit.rork.com/text/llm/';
+const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
 
 interface AIIdentificationResponse {
   brand?: string;
@@ -14,9 +17,25 @@ interface AIIdentificationResponse {
   description: string;
 }
 
-export async function analyzeWatchImage(imageBase64: string): Promise<AIAnalysis> {
+export async function analyzeWatchImage(imageBase64: string, useDirectAPI: boolean = false): Promise<AIAnalysis> {
   try {
-    const prompt = `Você é um especialista em relógios de luxo. Analise esta imagem de relógio com máxima precisão e identifique:
+    if (useDirectAPI) {
+      return await analyzeWithDirectOpenAI(imageBase64);
+    } else {
+      return await analyzeWithProxy(imageBase64);
+    }
+  } catch (error) {
+    console.error('Erro na análise:', error);
+    throw new Error(
+      error instanceof Error 
+        ? `Falha na análise: ${error.message}` 
+        : 'Erro desconhecido na análise da imagem'
+    );
+  }
+}
+
+async function analyzeWithProxy(imageBase64: string): Promise<AIAnalysis> {
+  const prompt = `Você é um especialista em relógios de luxo. Analise esta imagem de relógio com máxima precisão e identifique:
 
 🔍 ANÁLISE DETALHADA:
 1. MARCA - Procure logotipos, texto no mostrador, coroa, fecho da pulseira
@@ -49,85 +68,133 @@ export async function analyzeWatchImage(imageBase64: string): Promise<AIAnalysis
 
 IMPORTANTE: Retorne apenas o JSON válido, sem texto adicional.`;
 
-    const response = await fetch(AI_API_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        messages: [
-          {
-            role: 'user',
-            content: [
-              {
-                type: 'text',
-                text: prompt,
-              },
-              {
-                type: 'image',
-                image: imageBase64,
-              },
-            ],
-          },
-        ],
-      }),
-    });
+  const response = await fetch(AI_API_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      messages: [
+        {
+          role: 'user',
+          content: [
+            {
+              type: 'text',
+              text: prompt,
+            },
+            {
+              type: 'image',
+              image: imageBase64,
+            },
+          ],
+        },
+      ],
+    }),
+  });
 
-    if (!response.ok) {
-      throw new Error(`Erro na API de IA: ${response.status} - ${response.statusText}`);
-    }
-
-    const data = await response.json();
-    
-    if (!data.completion) {
-      throw new Error('Resposta inválida da API de IA');
-    }
-
-    // Try to parse JSON from the completion
-    try {
-      const jsonMatch = data.completion.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        const analysis: AIIdentificationResponse = JSON.parse(jsonMatch[0]);
-        
-        // Validate and structure the response
-        return {
-          brand: analysis.brand || undefined,
-          model: analysis.model || undefined,
-          caseMaterial: analysis.caseMaterial || 'Não identificado',
-          dialColor: analysis.dialColor || 'Não identificado',
-          braceletType: analysis.braceletType || 'Não identificado',
-          complications: Array.isArray(analysis.complications) ? analysis.complications : [],
-          estimatedSize: analysis.estimatedSize || 'Não determinado',
-          confidence: analysis.confidence || 'média',
-          description: analysis.description || data.completion,
-        };
-      }
-    } catch (parseError) {
-      console.warn('Erro ao fazer parse do JSON da IA, usando resposta completa:', parseError);
-    }
-
-    // Fallback: return the full completion as description with basic structure
-    return {
-      brand: undefined,
-      model: undefined,
-      caseMaterial: 'Análise em andamento',
-      dialColor: 'Análise em andamento',
-      braceletType: 'Análise em andamento',
-      complications: [],
-      estimatedSize: 'Análise em andamento',
-      confidence: 'média',
-      description: data.completion,
-    };
-  } catch (error) {
-    console.error('Erro na análise de IA:', error);
-    
-    // Return structured error response
-    throw new Error(
-      error instanceof Error 
-        ? `Falha na análise: ${error.message}` 
-        : 'Erro desconhecido na análise da imagem'
-    );
+  if (!response.ok) {
+    throw new Error(`Erro na API de IA: ${response.status} - ${response.statusText}`);
   }
+
+  const data = await response.json();
+  
+  if (!data.completion) {
+    throw new Error('Resposta inválida da API de IA');
+  }
+
+  return parseAIResponse(data.completion);
+}
+
+async function analyzeWithDirectOpenAI(imageBase64: string): Promise<AIAnalysis> {
+  // Get API key from store (you'd need to implement this)
+  const apiKey = await getStoredAPIKey();
+  
+  if (!apiKey) {
+    throw new Error('Chave da API OpenAI não configurada');
+  }
+
+  const response = await fetch(OPENAI_API_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: 'gpt-4-vision-preview',
+      messages: [
+        {
+          role: 'user',
+          content: [
+            {
+              type: 'text',
+              text: 'Analise esta imagem de relógio e identifique marca, modelo, material, cor do mostrador, tipo de pulseira, complicações e tamanho estimado. Responda em JSON estruturado.',
+            },
+            {
+              type: 'image_url',
+              image_url: {
+                url: `data:image/jpeg;base64,${imageBase64}`,
+              },
+            },
+          ],
+        },
+      ],
+      max_tokens: 1000,
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Erro na OpenAI API: ${response.status}`);
+  }
+
+  const data = await response.json();
+  const content = data.choices[0]?.message?.content;
+  
+  if (!content) {
+    throw new Error('Resposta inválida da OpenAI');
+  }
+
+  return parseAIResponse(content);
+}
+
+function parseAIResponse(completion: string): AIAnalysis {
+  try {
+    const jsonMatch = completion.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      const analysis: AIIdentificationResponse = JSON.parse(jsonMatch[0]);
+      
+      return {
+        brand: analysis.brand || undefined,
+        model: analysis.model || undefined,
+        caseMaterial: analysis.caseMaterial || 'Não identificado',
+        dialColor: analysis.dialColor || 'Não identificado',
+        braceletType: analysis.braceletType || 'Não identificado',
+        complications: Array.isArray(analysis.complications) ? analysis.complications : [],
+        estimatedSize: analysis.estimatedSize || 'Não determinado',
+        confidence: analysis.confidence || 'média',
+        description: analysis.description || completion,
+      };
+    }
+  } catch (parseError) {
+    console.warn('Erro ao fazer parse do JSON da IA:', parseError);
+  }
+
+  return {
+    brand: undefined,
+    model: undefined,
+    caseMaterial: 'Análise em andamento',
+    dialColor: 'Análise em andamento',
+    braceletType: 'Análise em andamento',
+    complications: [],
+    estimatedSize: 'Análise em andamento',
+    confidence: 'média',
+    description: completion,
+  };
+}
+
+async function getStoredAPIKey(): Promise<string | null> {
+  // This would get the API key from your store
+  // For now, return null to use proxy
+  return null;
 }
 
 export async function validateImageQuality(imageBase64: string): Promise<{
