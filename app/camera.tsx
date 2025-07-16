@@ -132,11 +132,11 @@ export default function CameraScreen() {
   };
 
   const analyzeImage = async (imageUri: string) => {
-    // Check if AI is configured
-    if (!config.isConfigured || !config.isValid) {
+    // Check if any API is configured
+    if (!config.isConfigured) {
       Alert.alert(
-        '🤖 IA não configurada',
-        'Para usar a identificação automática, configure sua chave da API nas configurações.',
+        '🤖 APIs não configuradas',
+        'Para usar a identificação automática, configure pelo menos uma API (OpenAI ou Supabase) nas configurações.',
         [
           { text: 'Cancelar', onPress: resetCamera },
           { text: 'Configurar', onPress: handleConfigureAI },
@@ -209,10 +209,10 @@ export default function CameraScreen() {
       
       Alert.alert(
         'Erro na Análise',
-        'Não foi possível analiizar a imagem. Verifique sua conexão e configuração da API.',
+        'Não foi possível analisar a imagem. Verifique sua conexão e configuração das APIs.',
         [
           { text: 'Tentar Novamente', onPress: () => analyzeImage(imageUri) },
-          { text: 'Configurar IA', onPress: handleConfigureAI },
+          { text: 'Configurar APIs', onPress: handleConfigureAI },
           { text: 'Cancelar', onPress: resetCamera },
         ]
       );
@@ -238,6 +238,20 @@ export default function CameraScreen() {
       default:
         return <View style={styles.pendingDot} />;
     }
+  };
+
+  const getConfigurationStatus = () => {
+    const statuses = [];
+    if (config.isOpenAIConfigured) {
+      statuses.push(config.openaiValid ? '🧠 OpenAI ✅' : '🧠 OpenAI ⚠️');
+    }
+    if (config.isSupabaseConfigured) {
+      statuses.push(config.supabaseValid ? '🗄️ Supabase ✅' : '🗄️ Supabase ⚠️');
+    }
+    if (statuses.length === 0) {
+      return '❌ Nenhuma API configurada';
+    }
+    return statuses.join(' | ');
   };
 
   if (!permission) {
@@ -294,10 +308,7 @@ export default function CameraScreen() {
                 Posicione o relógio no centro do quadro
               </Text>
               <Text style={styles.frameSubInstruction}>
-                {config.isConfigured && config.isValid 
-                  ? 'IA avançada analisará marca, modelo e características'
-                  : 'Configure a IA nas configurações para análise automática'
-                }
+                {getConfigurationStatus()}
               </Text>
             </View>
           </CameraView>
@@ -333,16 +344,20 @@ export default function CameraScreen() {
           <View style={styles.instructions}>
             <Text style={styles.instructionsTitle}>🎯 Dicas para melhor identificação:</Text>
             <Text style={styles.instructionsText}>
-              • Posicione o mostrador claramente visível{'\n'}
-              • Garanta boa iluminação sem reflexos{'\n'}
-              • Mantenha a câmera estável{'\n'}
-              • Inclua a marca/logo se possível{'\n'}
+              • Posicione o mostrador claramente visível{'
+'}
+              • Garanta boa iluminação sem reflexos{'
+'}
+              • Mantenha a câmera estável{'
+'}
+              • Inclua a marca/logo se possível{'
+'}
               • Evite sombras sobre o relógio
             </Text>
             {!config.isConfigured && (
-              <View style={styles.aiWarning}>
-                <Text style={styles.aiWarningText}>
-                  ⚠️ Configure a IA para identificação automática
+              <View style={styles.apiWarning}>
+                <Text style={styles.apiWarningText}>
+                  ⚠️ Configure pelo menos uma API para identificação automática
                 </Text>
               </View>
             )}
@@ -495,7 +510,7 @@ const styles = StyleSheet.create({
   },
   frameSubInstruction: {
     color: Colors.white,
-    fontSize: 14,
+    fontSize: 12,
     marginTop: 8,
     textAlign: 'center',
     opacity: 0.8,
@@ -556,7 +571,7 @@ const styles = StyleSheet.create({
     color: Colors.textLight,
     lineHeight: 22,
   },
-  aiWarning: {
+  apiWarning: {
     marginTop: 12,
     padding: 12,
     backgroundColor: Colors.warning + '20',
@@ -564,7 +579,7 @@ const styles = StyleSheet.create({
     borderLeftWidth: 4,
     borderLeftColor: Colors.warning,
   },
-  aiWarningText: {
+  apiWarningText: {
     fontSize: 14,
     color: Colors.warning,
     fontWeight: '500',

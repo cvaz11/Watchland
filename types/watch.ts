@@ -71,7 +71,13 @@ export interface IdentificationSettings {
 
 export interface APIConfiguration {
   openaiApiKey?: string;
+  supabaseUrl?: string;
+  supabaseAnonKey?: string;
+  isOpenAIConfigured: boolean;
+  isSupabaseConfigured: boolean;
   isConfigured: boolean;
   lastTested?: string;
   isValid?: boolean;
+  openaiValid?: boolean;
+  supabaseValid?: boolean;
 }

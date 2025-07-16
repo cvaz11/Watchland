@@ -191,10 +191,10 @@ function parseAIResponse(completion: string): AIAnalysis {
   };
 }
 
-async function getStoredAPIKey(): Promise<string | null> {
+async function getStoredAPIKey(): Promise<string | undefined> {
   // This would get the API key from your store
-  // For now, return null to use proxy
-  return null;
+  // For now, return undefined to use proxy
+  return undefined;
 }
 
 export async function validateImageQuality(imageBase64: string): Promise<{
@@ -314,6 +314,44 @@ export async function testAPIConnection(): Promise<{
     return {
       isValid: false,
       error: 'Resposta inesperada da API',
+    };
+  } catch (error) {
+    return {
+      isValid: false,
+      error: error instanceof Error ? error.message : 'Erro desconhecido',
+    };
+  }
+}
+
+export async function testSupabaseConnection(url?: string, anonKey?: string): Promise<{
+  isValid: boolean;
+  error?: string;
+}> {
+  if (!url || !anonKey) {
+    return {
+      isValid: false,
+      error: 'URL e chave anônima do Supabase são obrigatórias',
+    };
+  }
+
+  try {
+    // Test basic connection to Supabase
+    const response = await fetch(`${url}/rest/v1/`, {
+      method: 'GET',
+      headers: {
+        'apikey': anonKey,
+        'Authorization': `Bearer ${anonKey}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (response.ok) {
+      return { isValid: true };
+    }
+
+    return {
+      isValid: false,
+      error: `Erro HTTP: ${response.status}`,
     };
   } catch (error) {
     return {

@@ -1,4 +1,4 @@
-import { ArrowLeft, CheckCircle, XCircle, Loader, AlertCircle, Key, Zap } from 'lucide-react-native';
+import { ArrowLeft, CheckCircle, XCircle, Loader, AlertCircle, Key, Zap, Database } from 'lucide-react-native';
 import React, { useState } from 'react';
 import { StyleSheet, Text, View, ScrollView, Pressable, TextInput, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -11,80 +11,156 @@ import { useAPIStore } from '@/store/api-store';
 export default function AISettingsScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { config, isLoading, updateConfig, testConnection, clearConfig } = useAPIStore();
-  const [apiKey, setApiKey] = useState(config.openaiApiKey || '');
-  const [showKey, setShowKey] = useState(false);
+  const { 
+    config, 
+    isLoading, 
+    updateConfig, 
+    testOpenAIConnection, 
+    testSupabaseConnection,
+    clearOpenAIConfig,
+    clearSupabaseConfig 
+  } = useAPIStore();
+  
+  const [openaiKey, setOpenaiKey] = useState(config.openaiApiKey || '');
+  const [supabaseUrl, setSupabaseUrl] = useState(config.supabaseUrl || '');
+  const [supabaseKey, setSupabaseKey] = useState(config.supabaseAnonKey || '');
+  const [showOpenAIKey, setShowOpenAIKey] = useState(false);
+  const [showSupabaseKey, setShowSupabaseKey] = useState(false);
 
   const handleBack = () => {
     router.back();
   };
 
-  const handleSaveConfig = () => {
-    if (!apiKey.trim()) {
+  const handleSaveOpenAIConfig = () => {
+    if (!openaiKey.trim()) {
       Alert.alert('Erro', 'Por favor, insira uma chave de API válida.');
       return;
     }
 
     updateConfig({
-      openaiApiKey: apiKey.trim(),
-      isConfigured: true,
+      openaiApiKey: openaiKey.trim(),
+      isOpenAIConfigured: true,
     });
 
-    Alert.alert('Sucesso', 'Configuração salva! Teste a conexão para verificar se está funcionando.');
+    Alert.alert('Sucesso', 'Configuração OpenAI salva! Teste a conexão para verificar se está funcionando.');
   };
 
-  const handleTestConnection = async () => {
-    if (!apiKey.trim()) {
+  const handleSaveSupabaseConfig = () => {
+    if (!supabaseUrl.trim() || !supabaseKey.trim()) {
+      Alert.alert('Erro', 'Por favor, insira a URL e chave anônima do Supabase.');
+      return;
+    }
+
+    updateConfig({
+      supabaseUrl: supabaseUrl.trim(),
+      supabaseAnonKey: supabaseKey.trim(),
+      isSupabaseConfigured: true,
+    });
+
+    Alert.alert('Sucesso', 'Configuração Supabase salva! Teste a conexão para verificar se está funcionando.');
+  };
+
+  const handleTestOpenAI = async () => {
+    if (!openaiKey.trim()) {
       Alert.alert('Erro', 'Por favor, salve uma chave de API primeiro.');
       return;
     }
 
-    const isValid = await testConnection();
+    const isValid = await testOpenAIConnection();
     
     if (isValid) {
-      Alert.alert('✅ Sucesso', 'Conexão com a API estabelecida com sucesso!');
+      Alert.alert('✅ Sucesso', 'Conexão com OpenAI estabelecida com sucesso!');
     } else {
-      Alert.alert('❌ Erro', 'Falha ao conectar com a API. Verifique sua chave e conexão com a internet.');
+      Alert.alert('❌ Erro', 'Falha ao conectar com OpenAI. Verifique sua chave e conexão com a internet.');
     }
   };
 
-  const handleClearConfig = () => {
+  const handleTestSupabase = async () => {
+    if (!supabaseUrl.trim() || !supabaseKey.trim()) {
+      Alert.alert('Erro', 'Por favor, salve as configurações do Supabase primeiro.');
+      return;
+    }
+
+    const isValid = await testSupabaseConnection();
+    
+    if (isValid) {
+      Alert.alert('✅ Sucesso', 'Conexão com Supabase estabelecida com sucesso!');
+    } else {
+      Alert.alert('❌ Erro', 'Falha ao conectar com Supabase. Verifique suas configurações e conexão com a internet.');
+    }
+  };
+
+  const handleClearOpenAI = () => {
     Alert.alert(
-      'Limpar Configuração',
-      'Tem certeza que deseja remover a configuração da API?',
+      'Limpar Configuração OpenAI',
+      'Tem certeza que deseja remover a configuração da OpenAI?',
       [
         { text: 'Cancelar', style: 'cancel' },
         {
           text: 'Limpar',
           style: 'destructive',
           onPress: () => {
-            clearConfig();
-            setApiKey('');
-            Alert.alert('Sucesso', 'Configuração removida.');
+            clearOpenAIConfig();
+            setOpenaiKey('');
+            Alert.alert('Sucesso', 'Configuração OpenAI removida.');
           },
         },
       ]
     );
   };
 
-  const getStatusColor = () => {
-    if (config.isValid === true) return Colors.success;
-    if (config.isValid === false) return Colors.error;
+  const handleClearSupabase = () => {
+    Alert.alert(
+      'Limpar Configuração Supabase',
+      'Tem certeza que deseja remover a configuração do Supabase?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Limpar',
+          style: 'destructive',
+          onPress: () => {
+            clearSupabaseConfig();
+            setSupabaseUrl('');
+            setSupabaseKey('');
+            Alert.alert('Sucesso', 'Configuração Supabase removida.');
+          },
+        },
+      ]
+    );
+  };
+
+  const getOpenAIStatusColor = () => {
+    if (config.openaiValid === true) return Colors.success;
+    if (config.openaiValid === false) return Colors.error;
     return Colors.gray[400];
   };
 
-  const getStatusText = () => {
+  const getSupabaseStatusColor = () => {
+    if (config.supabaseValid === true) return Colors.success;
+    if (config.supabaseValid === false) return Colors.error;
+    return Colors.gray[400];
+  };
+
+  const getOpenAIStatusText = () => {
     if (isLoading) return 'Testando...';
-    if (config.isValid === true) return 'Conectado';
-    if (config.isValid === false) return 'Erro de conexão';
-    if (config.isConfigured) return 'Não testado';
+    if (config.openaiValid === true) return 'Conectado';
+    if (config.openaiValid === false) return 'Erro de conexão';
+    if (config.isOpenAIConfigured) return 'Não testado';
     return 'Não configurado';
   };
 
-  const getStatusIcon = () => {
+  const getSupabaseStatusText = () => {
+    if (isLoading) return 'Testando...';
+    if (config.supabaseValid === true) return 'Conectado';
+    if (config.supabaseValid === false) return 'Erro de conexão';
+    if (config.isSupabaseConfigured) return 'Não testado';
+    return 'Não configurado';
+  };
+
+  const getStatusIcon = (isValid?: boolean) => {
     if (isLoading) return <Loader size={16} color={Colors.gray[400]} />;
-    if (config.isValid === true) return <CheckCircle size={16} color={Colors.success} />;
-    if (config.isValid === false) return <XCircle size={16} color={Colors.error} />;
+    if (isValid === true) return <CheckCircle size={16} color={Colors.success} />;
+    if (isValid === false) return <XCircle size={16} color={Colors.error} />;
     return <AlertCircle size={16} color={Colors.gray[400]} />;
   };
 
@@ -94,7 +170,7 @@ export default function AISettingsScreen() {
         <Pressable onPress={handleBack} style={styles.backButton}>
           <ArrowLeft size={24} color={Colors.primary} />
         </Pressable>
-        <Text style={styles.headerTitle}>🤖 Configuração de IA</Text>
+        <Text style={styles.headerTitle}>🤖 Configuração de APIs</Text>
         <View style={styles.placeholder} />
       </View>
 
@@ -105,26 +181,21 @@ export default function AISettingsScreen() {
           { paddingBottom: insets.bottom + 20 },
         ]}
       >
+        {/* OpenAI Section */}
         <View style={styles.statusCard}>
           <View style={styles.statusHeader}>
-            <Text style={styles.statusTitle}>Status da Conexão</Text>
+            <Text style={styles.statusTitle}>🧠 OpenAI GPT-4 Vision</Text>
             <View style={styles.statusIndicator}>
-              {getStatusIcon()}
-              <Text style={[styles.statusText, { color: getStatusColor() }]}>
-                {getStatusText()}
+              {getStatusIcon(config.openaiValid)}
+              <Text style={[styles.statusText, { color: getOpenAIStatusColor() }]}>
+                {getOpenAIStatusText()}
               </Text>
             </View>
           </View>
-          
-          {config.lastTested && (
-            <Text style={styles.lastTested}>
-              Último teste: {new Date(config.lastTested).toLocaleString('pt-BR')}
-            </Text>
-          )}
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>🔑 Configuração da API</Text>
+          <Text style={styles.sectionTitle}>🔑 Configuração OpenAI</Text>
           <Text style={styles.sectionDescription}>
             Configure sua chave da API OpenAI para habilitar a identificação automática de relógios com IA.
           </Text>
@@ -135,80 +206,182 @@ export default function AISettingsScreen() {
               <Key size={20} color={Colors.gray[500]} />
               <TextInput
                 style={styles.input}
-                value={apiKey}
-                onChangeText={setApiKey}
+                value={openaiKey}
+                onChangeText={setOpenaiKey}
                 placeholder="sk-..."
                 placeholderTextColor={Colors.gray[500]}
-                secureTextEntry={!showKey}
+                secureTextEntry={!showOpenAIKey}
                 autoCapitalize="none"
                 autoCorrect={false}
               />
               <Pressable
-                onPress={() => setShowKey(!showKey)}
+                onPress={() => setShowOpenAIKey(!showOpenAIKey)}
                 style={styles.toggleButton}
               >
-                <Text style={styles.toggleText}>{showKey ? 'Ocultar' : 'Mostrar'}</Text>
+                <Text style={styles.toggleText}>{showOpenAIKey ? 'Ocultar' : 'Mostrar'}</Text>
               </Pressable>
             </View>
           </View>
 
           <View style={styles.buttonGroup}>
             <Button
-              title="💾 Salvar Configuração"
-              onPress={handleSaveConfig}
+              title="💾 Salvar OpenAI"
+              onPress={handleSaveOpenAIConfig}
               variant="primary"
               fullWidth
             />
             <View style={styles.buttonSpacing} />
             <Button
-              title="🧪 Testar Conexão"
-              onPress={handleTestConnection}
+              title="🧪 Testar OpenAI"
+              onPress={handleTestOpenAI}
               variant="outline"
               loading={isLoading}
-              disabled={!apiKey.trim()}
+              disabled={!openaiKey.trim()}
               fullWidth
             />
           </View>
 
-          {config.isConfigured && (
+          {config.isOpenAIConfigured && (
             <Button
-              title="🗑️ Limpar Configuração"
-              onPress={handleClearConfig}
+              title="🗑️ Limpar OpenAI"
+              onPress={handleClearOpenAI}
               variant="outline"
               fullWidth
             />
           )}
         </View>
 
+        {/* Supabase Section */}
+        <View style={styles.statusCard}>
+          <View style={styles.statusHeader}>
+            <Text style={styles.statusTitle}>🗄️ Supabase Database</Text>
+            <View style={styles.statusIndicator}>
+              {getStatusIcon(config.supabaseValid)}
+              <Text style={[styles.statusText, { color: getSupabaseStatusColor() }]}>
+                {getSupabaseStatusText()}
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>🗄️ Configuração Supabase</Text>
+          <Text style={styles.sectionDescription}>
+            Configure sua conexão com Supabase para armazenar dados de identificações e histórico.
+          </Text>
+
+          <View style={styles.inputContainer}>
+            <Text style={styles.inputLabel}>URL do Projeto Supabase</Text>
+            <View style={styles.inputWrapper}>
+              <Database size={20} color={Colors.gray[500]} />
+              <TextInput
+                style={styles.input}
+                value={supabaseUrl}
+                onChangeText={setSupabaseUrl}
+                placeholder="https://seu-projeto.supabase.co"
+                placeholderTextColor={Colors.gray[500]}
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
+            </View>
+          </View>
+
+          <View style={styles.inputContainer}>
+            <Text style={styles.inputLabel}>Chave Anônima (anon key)</Text>
+            <View style={styles.inputWrapper}>
+              <Key size={20} color={Colors.gray[500]} />
+              <TextInput
+                style={styles.input}
+                value={supabaseKey}
+                onChangeText={setSupabaseKey}
+                placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                placeholderTextColor={Colors.gray[500]}
+                secureTextEntry={!showSupabaseKey}
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
+              <Pressable
+                onPress={() => setShowSupabaseKey(!showSupabaseKey)}
+                style={styles.toggleButton}
+              >
+                <Text style={styles.toggleText}>{showSupabaseKey ? 'Ocultar' : 'Mostrar'}</Text>
+              </Pressable>
+            </View>
+          </View>
+
+          <View style={styles.buttonGroup}>
+            <Button
+              title="💾 Salvar Supabase"
+              onPress={handleSaveSupabaseConfig}
+              variant="primary"
+              fullWidth
+            />
+            <View style={styles.buttonSpacing} />
+            <Button
+              title="🧪 Testar Supabase"
+              onPress={handleTestSupabase}
+              variant="outline"
+              loading={isLoading}
+              disabled={!supabaseUrl.trim() || !supabaseKey.trim()}
+              fullWidth
+            />
+          </View>
+
+          {config.isSupabaseConfigured && (
+            <Button
+              title="🗑️ Limpar Supabase"
+              onPress={handleClearSupabase}
+              variant="outline"
+              fullWidth
+            />
+          )}
+        </View>
+
+        {config.lastTested && (
+          <View style={styles.lastTestedCard}>
+            <Text style={styles.lastTested}>
+              Último teste: {new Date(config.lastTested).toLocaleString('pt-BR')}
+            </Text>
+          </View>
+        )}
+
         <View style={styles.infoSection}>
-          <Text style={styles.infoTitle}>ℹ️ Como obter uma chave da API</Text>
+          <Text style={styles.infoTitle}>ℹ️ Como obter as chaves</Text>
           <View style={styles.infoSteps}>
+            <Text style={styles.infoSubtitle}>OpenAI:</Text>
             <Text style={styles.infoStep}>1. Acesse platform.openai.com</Text>
             <Text style={styles.infoStep}>2. Faça login ou crie uma conta</Text>
             <Text style={styles.infoStep}>3. Vá para "API Keys" no menu</Text>
             <Text style={styles.infoStep}>4. Clique em "Create new secret key"</Text>
             <Text style={styles.infoStep}>5. Copie e cole a chave aqui</Text>
+            
+            <Text style={[styles.infoSubtitle, { marginTop: 16 }]}>Supabase:</Text>
+            <Text style={styles.infoStep}>1. Acesse supabase.com</Text>
+            <Text style={styles.infoStep}>2. Crie um projeto ou acesse existente</Text>
+            <Text style={styles.infoStep}>3. Vá para Settings → API</Text>
+            <Text style={styles.infoStep}>4. Copie a URL e anon key</Text>
+            <Text style={styles.infoStep}>5. Cole as informações aqui</Text>
           </View>
         </View>
 
         <View style={styles.featuresSection}>
-          <Text style={styles.featuresTitle}>⚡ Recursos da IA</Text>
+          <Text style={styles.featuresTitle}>⚡ Recursos Disponíveis</Text>
           <View style={styles.featuresList}>
             <View style={styles.featureItem}>
               <Zap size={16} color={Colors.primary} />
-              <Text style={styles.featureText}>Identificação automática de marca e modelo</Text>
+              <Text style={styles.featureText}>Identificação automática com OpenAI</Text>
             </View>
             <View style={styles.featureItem}>
               <Zap size={16} color={Colors.primary} />
-              <Text style={styles.featureText}>Análise de materiais e características</Text>
+              <Text style={styles.featureText}>Armazenamento seguro com Supabase</Text>
             </View>
             <View style={styles.featureItem}>
               <Zap size={16} color={Colors.primary} />
-              <Text style={styles.featureText}>Estimativa de tamanho e complicações</Text>
+              <Text style={styles.featureText}>Histórico sincronizado na nuvem</Text>
             </View>
             <View style={styles.featureItem}>
               <Zap size={16} color={Colors.primary} />
-              <Text style={styles.featureText}>Nível de confiança da identificação</Text>
+              <Text style={styles.featureText}>Backup automático dos dados</Text>
             </View>
           </View>
         </View>
@@ -216,10 +389,15 @@ export default function AISettingsScreen() {
         <View style={styles.warningSection}>
           <Text style={styles.warningTitle}>⚠️ Importante</Text>
           <Text style={styles.warningText}>
-            • Sua chave da API é armazenada localmente no dispositivo{'\n'}
-            • Nunca compartilhe sua chave com terceiros{'\n'}
-            • O uso da API pode gerar custos na OpenAI{'\n'}
-            • Sem a API, você ainda pode usar busca manual
+            • Suas chaves são armazenadas localmente no dispositivo{'
+'}
+            • Nunca compartilhe suas chaves com terceiros{'
+'}
+            • O uso das APIs pode gerar custos{'
+'}
+            • Sem as APIs, você ainda pode usar busca manual{'
+'}
+            • Supabase oferece tier gratuito generoso
           </Text>
         </View>
       </ScrollView>
@@ -268,7 +446,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.white,
     borderRadius: 12,
     padding: 16,
-    marginBottom: 24,
+    marginBottom: 16,
     shadowColor: Colors.black,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -279,7 +457,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
   },
   statusTitle: {
     fontSize: 16,
@@ -295,9 +472,16 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     marginLeft: 8,
   },
+  lastTestedCard: {
+    backgroundColor: Colors.gray[100],
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 16,
+  },
   lastTested: {
     fontSize: 12,
     color: Colors.gray[600],
+    textAlign: 'center',
   },
   section: {
     marginBottom: 32,
@@ -315,7 +499,7 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   inputContainer: {
-    marginBottom: 20,
+    marginBottom: 16,
   },
   inputLabel: {
     fontSize: 16,
@@ -369,7 +553,13 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   infoSteps: {
-    gap: 8,
+    gap: 4,
+  },
+  infoSubtitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: Colors.primary,
+    marginBottom: 8,
   },
   infoStep: {
     fontSize: 14,
