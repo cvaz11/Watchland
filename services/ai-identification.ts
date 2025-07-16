@@ -1,9 +1,7 @@
 import { AIAnalysis } from '@/types/watch';
-import { useAPIStore } from '@/store/api-store';
 
-// Use the proxy API or direct OpenAI API
+// Use the built-in AI API
 const AI_API_URL = 'https://toolkit.rork.com/text/llm/';
-const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
 
 interface AIIdentificationResponse {
   brand?: string;
@@ -17,13 +15,9 @@ interface AIIdentificationResponse {
   description: string;
 }
 
-export async function analyzeWatchImage(imageBase64: string, useDirectAPI: boolean = false): Promise<AIAnalysis> {
+export async function analyzeWatchImage(imageBase64: string): Promise<AIAnalysis> {
   try {
-    if (useDirectAPI) {
-      return await analyzeWithDirectOpenAI(imageBase64);
-    } else {
-      return await analyzeWithProxy(imageBase64);
-    }
+    return await analyzeWithProxy(imageBase64);
   } catch (error) {
     console.error('Erro na análise:', error);
     throw new Error(
@@ -105,57 +99,6 @@ IMPORTANTE: Retorne apenas o JSON válido, sem texto adicional.`;
   return parseAIResponse(data.completion);
 }
 
-async function analyzeWithDirectOpenAI(imageBase64: string): Promise<AIAnalysis> {
-  // Get API key from store (you'd need to implement this)
-  const apiKey = await getStoredAPIKey();
-  
-  if (!apiKey) {
-    throw new Error('Chave da API OpenAI não configurada');
-  }
-
-  const response = await fetch(OPENAI_API_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model: 'gpt-4-vision-preview',
-      messages: [
-        {
-          role: 'user',
-          content: [
-            {
-              type: 'text',
-              text: 'Analise esta imagem de relógio e identifique marca, modelo, material, cor do mostrador, tipo de pulseira, complicações e tamanho estimado. Responda em JSON estruturado.',
-            },
-            {
-              type: 'image_url',
-              image_url: {
-                url: `data:image/jpeg;base64,${imageBase64}`,
-              },
-            },
-          ],
-        },
-      ],
-      max_tokens: 1000,
-    }),
-  });
-
-  if (!response.ok) {
-    throw new Error(`Erro na OpenAI API: ${response.status}`);
-  }
-
-  const data = await response.json();
-  const content = data.choices[0]?.message?.content;
-  
-  if (!content) {
-    throw new Error('Resposta inválida da OpenAI');
-  }
-
-  return parseAIResponse(content);
-}
-
 function parseAIResponse(completion: string): AIAnalysis {
   try {
     const jsonMatch = completion.match(/\{[\s\S]*\}/);
@@ -189,12 +132,6 @@ function parseAIResponse(completion: string): AIAnalysis {
     confidence: 'média',
     description: completion,
   };
-}
-
-async function getStoredAPIKey(): Promise<string | undefined> {
-  // This would get the API key from your store
-  // For now, return undefined to use proxy
-  return undefined;
 }
 
 export async function validateImageQuality(imageBase64: string): Promise<{
@@ -274,89 +211,6 @@ Responda em JSON:
       isValid: true,
       issues: [],
       suggestions: [],
-    };
-  }
-}
-
-export async function testAPIConnection(): Promise<{
-  isValid: boolean;
-  error?: string;
-}> {
-  try {
-    const response = await fetch(AI_API_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        messages: [
-          {
-            role: 'user',
-            content: 'Teste de conexão. Responda apenas: "Conexão OK"',
-          },
-        ],
-      }),
-    });
-
-    if (!response.ok) {
-      return {
-        isValid: false,
-        error: `Erro HTTP: ${response.status}`,
-      };
-    }
-
-    const data = await response.json();
-    
-    if (data.completion && data.completion.includes('Conexão OK')) {
-      return { isValid: true };
-    }
-
-    return {
-      isValid: false,
-      error: 'Resposta inesperada da API',
-    };
-  } catch (error) {
-    return {
-      isValid: false,
-      error: error instanceof Error ? error.message : 'Erro desconhecido',
-    };
-  }
-}
-
-export async function testSupabaseConnection(url?: string, anonKey?: string): Promise<{
-  isValid: boolean;
-  error?: string;
-}> {
-  if (!url || !anonKey) {
-    return {
-      isValid: false,
-      error: 'URL e chave anônima do Supabase são obrigatórias',
-    };
-  }
-
-  try {
-    // Test basic connection to Supabase
-    const response = await fetch(`${url}/rest/v1/`, {
-      method: 'GET',
-      headers: {
-        'apikey': anonKey,
-        'Authorization': `Bearer ${anonKey}`,
-        'Content-Type': 'application/json',
-      },
-    });
-
-    if (response.ok) {
-      return { isValid: true };
-    }
-
-    return {
-      isValid: false,
-      error: `Erro HTTP: ${response.status}`,
-    };
-  } catch (error) {
-    return {
-      isValid: false,
-      error: error instanceof Error ? error.message : 'Erro desconhecido',
     };
   }
 }

@@ -10,7 +10,7 @@ import Button from '@/components/Button';
 import Colors from '@/constants/colors';
 import { useUserStore } from '@/store/user-store';
 import { useIdentificationStore } from '@/store/identification-store';
-import { useAPIStore } from '@/store/api-store';
+
 import { analyzeWatchImage, validateImageQuality } from '@/services/ai-identification';
 import { findMatchingWatches } from '@/services/watch-matching';
 import { compressImage } from '@/utils/image-utils';
@@ -32,7 +32,7 @@ export default function CameraScreen() {
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [analysisSteps, setAnalysisSteps] = useState<AnalysisStep[]>([]);
   const { incrementIdentifications } = useUserStore();
-  const { config } = useAPIStore();
+
   const { 
     isAnalyzing, 
     setAnalyzing, 
@@ -80,9 +80,7 @@ export default function CameraScreen() {
     router.back();
   };
 
-  const handleConfigureAI = () => {
-    router.push('/ai-settings');
-  };
+
 
   const toggleCameraFacing = () => {
     setFacing(current => (current === 'back' ? 'front' : 'back'));
@@ -132,18 +130,6 @@ export default function CameraScreen() {
   };
 
   const analyzeImage = async (imageUri: string) => {
-    // Check if any API is configured
-    if (!config.isConfigured) {
-      Alert.alert(
-        '🤖 APIs não configuradas',
-        'Para usar a identificação automática, configure pelo menos uma API (OpenAI ou Supabase) nas configurações.',
-        [
-          { text: 'Cancelar', onPress: resetCamera },
-          { text: 'Configurar', onPress: handleConfigureAI },
-        ]
-      );
-      return;
-    }
 
     setAnalyzing(true);
     setCurrentAnalysis(null);
@@ -209,10 +195,9 @@ export default function CameraScreen() {
       
       Alert.alert(
         'Erro na Análise',
-        'Não foi possível analisar a imagem. Verifique sua conexão e configuração das APIs.',
+        'Não foi possível analisar a imagem. Verifique sua conexão com a internet.',
         [
           { text: 'Tentar Novamente', onPress: () => analyzeImage(imageUri) },
-          { text: 'Configurar APIs', onPress: handleConfigureAI },
           { text: 'Cancelar', onPress: resetCamera },
         ]
       );
@@ -284,9 +269,7 @@ export default function CameraScreen() {
         <Text style={styles.headerTitle}>
           {isAnalyzing ? '🤖 Analisando com IA...' : '📸 Identificar Relógio'}
         </Text>
-        <Pressable onPress={handleConfigureAI} style={styles.settingsButton}>
-          <Settings size={20} color={Colors.white} />
-        </Pressable>
+        <View style={styles.placeholder} />
       </View>
 
       {!capturedImage ? (

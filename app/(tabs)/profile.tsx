@@ -1,4 +1,4 @@
-import { Crown, Settings, History, Bot } from 'lucide-react-native';
+import { Crown, Settings, History } from 'lucide-react-native';
 import React from 'react';
 import { StyleSheet, Text, View, Image, Pressable, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -8,14 +8,14 @@ import Button from '@/components/Button';
 import Colors from '@/constants/colors';
 import { useUserStore } from '@/store/user-store';
 import { useIdentificationStore } from '@/store/identification-store';
-import { useAPIStore } from '@/store/api-store';
+
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { user, isLoggedIn, login, logout } = useUserStore();
   const { history } = useIdentificationStore();
-  const { config } = useAPIStore();
+
 
   const handleLogin = () => {
     login();
@@ -33,9 +33,7 @@ export default function ProfileScreen() {
     router.push('/identification-history');
   };
 
-  const handleAISettings = () => {
-    router.push('/ai-settings');
-  };
+
 
   const handleUpgrade = () => {
     console.log('Navegar para upgrade premium');
@@ -112,25 +110,7 @@ export default function ProfileScreen() {
         </View>
       )}
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>🤖 Inteligência Artificial</Text>
-        <Pressable style={styles.menuItem} onPress={handleAISettings}>
-          <View style={styles.menuItemContent}>
-            <Bot size={20} color={Colors.primary} />
-            <View style={styles.menuItemTextContainer}>
-              <Text style={styles.menuItemText}>Configuração de IA</Text>
-              <Text style={styles.menuItemSubtext}>
-                {config.isConfigured 
-                  ? config.isValid 
-                    ? '✅ Conectado' 
-                    : '⚠️ Erro de conexão'
-                  : '❌ Não configurado'
-                }
-              </Text>
-            </View>
-          </View>
-        </Pressable>
-      </View>
+
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Identificações</Text>
