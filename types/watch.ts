@@ -68,3 +68,10 @@ export interface IdentificationSettings {
   showConfidence: boolean;
   saveHistory: boolean;
 }
+
+export interface APIConfiguration {
+  openaiApiKey?: string;
+  isConfigured: boolean;
+  lastTested?: string;
+  isValid?: boolean;
+}

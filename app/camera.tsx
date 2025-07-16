@@ -1,7 +1,7 @@
 import { useRouter } from 'expo-router';
 import { CameraView, CameraType, useCameraPermissions } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
-import { Camera, Image as ImageIcon, X, Zap, RotateCcw, AlertCircle, CheckCircle } from 'lucide-react-native';
+import { Camera, Image as ImageIcon, X, Zap, RotateCcw, AlertCircle, CheckCircle, Settings } from 'lucide-react-native';
 import React, { useState, useRef } from 'react';
 import { StyleSheet, Text, View, Pressable, ActivityIndicator, Image, Platform, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -10,6 +10,7 @@ import Button from '@/components/Button';
 import Colors from '@/constants/colors';
 import { useUserStore } from '@/store/user-store';
 import { useIdentificationStore } from '@/store/identification-store';
+import { useAPIStore } from '@/store/api-store';
 import { analyzeWatchImage, validateImageQuality } from '@/services/ai-identification';
 import { findMatchingWatches } from '@/services/watch-matching';
 import { compressImage } from '@/utils/image-utils';
@@ -31,6 +32,7 @@ export default function CameraScreen() {
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [analysisSteps, setAnalysisSteps] = useState<AnalysisStep[]>([]);
   const { incrementIdentifications } = useUserStore();
+  const { config } = useAPIStore();
   const { 
     isAnalyzing, 
     setAnalyzing, 
@@ -76,6 +78,10 @@ export default function CameraScreen() {
 
   const handleClose = () => {
     router.back();
+  };
+
+  const handleConfigureAI = () => {
+    router.push('/ai-settings');
   };
 
   const toggleCameraFacing = () => {
@@ -126,6 +132,19 @@ export default function CameraScreen() {
   };
 
   const analyzeImage = async (imageUri: string) => {
+    // Check if AI is configured
+    if (!config.isConfigured || !config.isValid) {
+      Alert.alert(
+        '🤖 IA não configurada',
+        'Para usar a identificação automática, configure sua chave da API nas configurações.',
+        [
+          { text: 'Cancelar', onPress: resetCamera },
+          { text: 'Configurar', onPress: handleConfigureAI },
+        ]
+      );
+      return;
+    }
+
     setAnalyzing(true);
     setCurrentAnalysis(null);
     const steps = initializeAnalysisSteps();
@@ -190,9 +209,10 @@ export default function CameraScreen() {
       
       Alert.alert(
         'Erro na Análise',
-        'Não foi possível analisar a imagem. Verifique sua conexão e tente novamente.',
+        'Não foi possível analiizar a imagem. Verifique sua conexão e configuração da API.',
         [
           { text: 'Tentar Novamente', onPress: () => analyzeImage(imageUri) },
+          { text: 'Configurar IA', onPress: handleConfigureAI },
           { text: 'Cancelar', onPress: resetCamera },
         ]
       );
@@ -250,7 +270,9 @@ export default function CameraScreen() {
         <Text style={styles.headerTitle}>
           {isAnalyzing ? '🤖 Analisando com IA...' : '📸 Identificar Relógio'}
         </Text>
-        <View style={styles.placeholder} />
+        <Pressable onPress={handleConfigureAI} style={styles.settingsButton}>
+          <Settings size={20} color={Colors.white} />
+        </Pressable>
       </View>
 
       {!capturedImage ? (
@@ -272,7 +294,10 @@ export default function CameraScreen() {
                 Posicione o relógio no centro do quadro
               </Text>
               <Text style={styles.frameSubInstruction}>
-                IA avançada analisará marca, modelo e características
+                {config.isConfigured && config.isValid 
+                  ? 'IA avançada analisará marca, modelo e características'
+                  : 'Configure a IA nas configurações para análise automática'
+                }
               </Text>
             </View>
           </CameraView>
@@ -314,6 +339,13 @@ export default function CameraScreen() {
               • Inclua a marca/logo se possível{'\n'}
               • Evite sombras sobre o relógio
             </Text>
+            {!config.isConfigured && (
+              <View style={styles.aiWarning}>
+                <Text style={styles.aiWarningText}>
+                  ⚠️ Configure a IA para identificação automática
+                </Text>
+              </View>
+            )}
           </View>
         </>
       ) : (
@@ -397,8 +429,13 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: Colors.white,
   },
-  placeholder: {
+  settingsButton: {
     width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   camera: {
     flex: 1,
@@ -518,6 +555,19 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: Colors.textLight,
     lineHeight: 22,
+  },
+  aiWarning: {
+    marginTop: 12,
+    padding: 12,
+    backgroundColor: Colors.warning + '20',
+    borderRadius: 8,
+    borderLeftWidth: 4,
+    borderLeftColor: Colors.warning,
+  },
+  aiWarningText: {
+    fontSize: 14,
+    color: Colors.warning,
+    fontWeight: '500',
   },
   permissionTitle: {
     fontSize: 20,

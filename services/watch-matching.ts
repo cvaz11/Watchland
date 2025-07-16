@@ -106,13 +106,13 @@ Identifique e extraia:
 
 Responda em JSON:
 {
-  "brand": "marca ou null",
-  "model": "modelo ou null",
-  "color": "cor ou null",
-  "material": "material ou null",
-  "bracelet": "tipo pulseira ou null",
-  "category": "categoria ou null",
-  "priceMax": número_ou_null,
+  "brand": "marca ou deixe vazio",
+  "model": "modelo ou deixe vazio",
+  "color": "cor ou deixe vazio",
+  "material": "material ou deixe vazio",
+  "bracelet": "tipo pulseira ou deixe vazio",
+  "category": "categoria ou deixe vazio",
+  "priceMax": número_ou_deixe_vazio,
   "keywords": ["palavra1", "palavra2"]
 }`;
 

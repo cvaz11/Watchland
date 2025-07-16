@@ -36,8 +36,8 @@ export async function analyzeWatchImage(imageBase64: string): Promise<AIAnalysis
 
 📋 RESPONDA EM JSON VÁLIDO:
 {
-  "brand": "marca identificada ou null se incerto",
-  "model": "modelo específico ou null se incerto",
+  "brand": "marca identificada ou deixe vazio se incerto",
+  "model": "modelo específico ou deixe vazio se incerto",
   "caseMaterial": "material da caixa",
   "dialColor": "cor específica do mostrador",
   "braceletType": "tipo de pulseira/bracelete",
@@ -207,6 +207,51 @@ Responda em JSON:
       isValid: true,
       issues: [],
       suggestions: [],
+    };
+  }
+}
+
+export async function testAPIConnection(): Promise<{
+  isValid: boolean;
+  error?: string;
+}> {
+  try {
+    const response = await fetch(AI_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        messages: [
+          {
+            role: 'user',
+            content: 'Teste de conexão. Responda apenas: "Conexão OK"',
+          },
+        ],
+      }),
+    });
+
+    if (!response.ok) {
+      return {
+        isValid: false,
+        error: `Erro HTTP: ${response.status}`,
+      };
+    }
+
+    const data = await response.json();
+    
+    if (data.completion && data.completion.includes('Conexão OK')) {
+      return { isValid: true };
+    }
+
+    return {
+      isValid: false,
+      error: 'Resposta inesperada da API',
+    };
+  } catch (error) {
+    return {
+      isValid: false,
+      error: error instanceof Error ? error.message : 'Erro desconhecido',
     };
   }
 }

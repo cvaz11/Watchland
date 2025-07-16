@@ -61,6 +61,12 @@ function RootLayoutNav() {
         }} 
       />
       <Stack.Screen 
+        name="ai-settings" 
+        options={{ 
+          headerShown: false,
+        }} 
+      />
+      <Stack.Screen 
         name="watch/[id]" 
         options={{ 
           title: 'Detalhes do Relógio',
