@@ -82,7 +82,7 @@ export function findMatchingWatches(aiAnalysis: AIAnalysis): IdentificationResul
 export function searchWatches(query: string): Watch[] {
   const searchTerm = query.toLowerCase().trim();
   
-  if (!searchTerm) return [];
+  if (!searchTerm) return watchesDatabase;
 
   return watchesDatabase.filter(watch => {
     const searchableText = [
@@ -99,6 +99,7 @@ export function searchWatches(query: string): Watch[] {
 
 export async function searchWithAI(query: string): Promise<Watch[]> {
   if (!OPENAI_API_KEY) {
+    console.warn('OpenAI API key not configured, falling back to regular search');
     return searchWatches(query);
   }
 
@@ -114,13 +115,13 @@ export async function searchWithAI(query: string): Promise<Watch[]> {
         messages: [
           {
             role: 'user',
-            content: `Analise esta consulta de busca de relógio em linguagem natural e extraia os critérios de busca:
+            content: `Você é um especialista em relógios. Analise esta consulta de busca e extraia critérios específicos:
 
 Consulta: "${query}"
 
 Identifique e extraia:
-1. MARCA mencionada (se houver)
-2. MODELO mencionado (se houver)
+1. MARCA mencionada (Rolex, Omega, Tissot, etc.)
+2. MODELO específico (Submariner, Speedmaster, PRX, etc.)
 3. COR do mostrador ou caixa
 4. MATERIAL da caixa (aço, ouro, titânio, etc.)
 5. TIPO DE PULSEIRA (aço, couro, borracha)
@@ -128,7 +129,7 @@ Identifique e extraia:
 7. FAIXA DE PREÇO (se mencionada)
 8. CARACTERÍSTICAS especiais
 
-Responda em JSON:
+Responda APENAS em JSON válido:
 {
   "brand": "marca ou deixe vazio",
   "model": "modelo ou deixe vazio",
@@ -161,7 +162,7 @@ Responda em JSON:
         return filterWatchesByCriteria(searchCriteria);
       }
     } catch (parseError) {
-      console.warn('Erro ao fazer parse do JSON da busca OpenAI');
+      console.warn('Erro ao fazer parse do JSON da busca OpenAI:', parseError);
     }
 
     // Fallback to regular search

@@ -1,5 +1,5 @@
-import { Search, Filter, ArrowLeft, Lightbulb, X } from 'lucide-react-native';
-import React, { useState, useMemo } from 'react';
+import { Search, Filter, ArrowLeft, Lightbulb, X, Camera, Sparkles } from 'lucide-react-native';
+import React, { useState, useMemo, useEffect } from 'react';
 import { StyleSheet, Text, View, TextInput, FlatList, Pressable, Modal, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -10,7 +10,7 @@ import Colors from '@/constants/colors';
 import { watchesDatabase } from '@/mocks/watches-database';
 import { searchWatches, searchWithAI } from '@/services/watch-matching';
 
-const BRANDS = ['Todos', 'Rolex', 'Omega', 'Patek Philippe', 'Audemars Piguet', 'TAG Heuer', 'Breitling', 'IWC', 'Grand Seiko', 'Jaeger-LeCoultre'];
+const BRANDS = ['Todos', 'Rolex', 'Omega', 'Patek Philippe', 'Audemars Piguet', 'TAG Heuer', 'Breitling', 'IWC', 'Grand Seiko', 'Jaeger-LeCoultre', 'Tissot'];
 const PRICE_RANGES = [
   { label: 'Todos', min: 0, max: Infinity },
   { label: 'Até R$ 25.000', min: 0, max: 25000 },
@@ -20,6 +20,7 @@ const PRICE_RANGES = [
 ];
 
 const SEARCH_EXAMPLES = [
+  "tissot prx",
   "relógio dourado até R$ 10.000",
   "cronógrafo preto esportivo",
   "relógio clássico para trabalho",
@@ -39,9 +40,10 @@ export default function CatalogScreen() {
   const [showFilters, setShowFilters] = useState(false);
   const [showExamples, setShowExamples] = useState(false);
   const [isSearchingWithAI, setIsSearchingWithAI] = useState(false);
+  const [searchResults, setSearchResults] = useState(watchesDatabase);
 
   const filteredWatches = useMemo(() => {
-    let watches = searchQuery ? searchWatches(searchQuery) : watchesDatabase;
+    let watches = searchResults;
 
     if (selectedBrand !== 'Todos') {
       watches = watches.filter(watch => watch.brand === selectedBrand);
@@ -55,7 +57,20 @@ export default function CatalogScreen() {
     }
 
     return watches;
-  }, [searchQuery, selectedBrand, selectedPriceRange]);
+  }, [searchResults, selectedBrand, selectedPriceRange]);
+
+  // Auto-search when query changes
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (searchQuery.trim()) {
+        handleSmartSearch(searchQuery);
+      } else {
+        setSearchResults(watchesDatabase);
+      }
+    }, 500); // Debounce search
+
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery]);
 
   const handleBack = () => {
     router.back();
@@ -69,25 +84,50 @@ export default function CatalogScreen() {
     setSelectedBrand('Todos');
     setSelectedPriceRange(PRICE_RANGES[0]);
     setSearchQuery('');
+    setSearchResults(watchesDatabase);
   };
 
   const handleExamplePress = (example: string) => {
     setSearchQuery(example);
     setShowExamples(false);
-    handleSmartSearch(example);
   };
 
   const handleSmartSearch = async (query: string) => {
-    if (!query.trim()) return;
+    if (!query.trim()) {
+      setSearchResults(watchesDatabase);
+      return;
+    }
     
     setIsSearchingWithAI(true);
     try {
-      const aiResults = await searchWithAI(query);
-      console.log('Busca com IA:', aiResults);
+      // First try regular search
+      const regularResults = searchWatches(query);
+      
+      // If we have good results, use them
+      if (regularResults.length > 0) {
+        setSearchResults(regularResults);
+      } else {
+        // Try AI search for better results
+        const aiResults = await searchWithAI(query);
+        setSearchResults(aiResults.length > 0 ? aiResults : regularResults);
+      }
     } catch (error) {
-      console.error('Erro na busca com IA:', error);
+      console.error('Erro na busca:', error);
+      // Fallback to regular search
+      const fallbackResults = searchWatches(query);
+      setSearchResults(fallbackResults);
     } finally {
       setIsSearchingWithAI(false);
+    }
+  };
+
+  const handleCameraPress = () => {
+    router.push('/camera');
+  };
+
+  const handleAISearch = () => {
+    if (searchQuery.trim()) {
+      handleSmartSearch(searchQuery);
     }
   };
 
@@ -106,11 +146,10 @@ export default function CatalogScreen() {
           <Search size={20} color={Colors.gray[500]} />
           <TextInput
             style={styles.searchInput}
-            placeholder="Descreva o relógio que procura..."
+            placeholder="Ex: tissot prx, cronógrafo azul..."
             value={searchQuery}
             onChangeText={setSearchQuery}
             placeholderTextColor={Colors.gray[500]}
-            onSubmitEditing={() => handleSmartSearch(searchQuery)}
           />
           {isSearchingWithAI && (
             <Text style={styles.aiIndicator}>🤖</Text>
@@ -188,7 +227,7 @@ export default function CatalogScreen() {
         </Text>
         {searchQuery && (
           <Text style={styles.searchHint}>
-            Use linguagem natural: cronógrafo azul até R$ 30.000
+            {isSearchingWithAI ? '🤖 Buscando com IA...' : 'Use linguagem natural: tissot prx, cronógrafo azul'}
           </Text>
         )}
       </View>
@@ -199,11 +238,32 @@ export default function CatalogScreen() {
         renderItem={({ item }) => <WatchCard watch={item} showRarity />}
         contentContainerStyle={[
           styles.listContent,
-          { paddingBottom: insets.bottom + 20 },
+          { paddingBottom: insets.bottom + 100 }, // Extra space for fixed buttons
         ]}
         showsVerticalScrollIndicator={false}
         numColumns={1}
       />
+
+      {/* Fixed bottom buttons */}
+      <View style={[styles.fixedButtons, { paddingBottom: insets.bottom + 20 }]}>
+        <Button
+          title="🤖 Busca Inteligente"
+          onPress={handleAISearch}
+          variant="secondary"
+          size="medium"
+          icon={<Sparkles size={18} color={Colors.primary} />}
+          disabled={!searchQuery.trim() || isSearchingWithAI}
+          loading={isSearchingWithAI}
+        />
+        <View style={styles.buttonSpacing} />
+        <Button
+          title="📸 Identificar por Foto"
+          onPress={handleCameraPress}
+          variant="primary"
+          size="medium"
+          icon={<Camera size={18} color={Colors.white} />}
+        />
+      </View>
 
       <Modal
         visible={showExamples}
@@ -236,12 +296,13 @@ export default function CatalogScreen() {
               ))}
               
               <View style={styles.modalTip}>
-                <Text style={styles.tipTitle}>Dicas para melhor busca:</Text>
+                <Text style={styles.tipTitle}>🤖 Dicas para busca com IA:</Text>
                 <Text style={styles.tipText}>
-                  • Mencione cor: preto, dourado, azul{'\n'}
-                  • Inclua faixa de preço: até R$ 10.000{'\n'}
-                  • Descreva o estilo: esportivo, clássico, vintage{'\n'}
-                  • Especifique uso: para trabalho, mergulho, viagem
+                  • Mencione marca e modelo: "tissot prx"{'\n'}
+                  • Inclua cor: "relógio preto", "mostrador azul"{'\n'}
+                  • Especifique faixa de preço: "até R$ 10.000"{'\n'}
+                  • Descreva o estilo: "esportivo", "clássico", "vintage"{'\n'}
+                  • Mencione uso: "para trabalho", "mergulho", "viagem"
                 </Text>
               </View>
             </ScrollView>
@@ -391,6 +452,26 @@ const styles = StyleSheet.create({
   },
   listContent: {
     padding: 20,
+  },
+  fixedButtons: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    backgroundColor: Colors.white,
+    borderTopWidth: 1,
+    borderTopColor: Colors.gray[200],
+    shadowColor: Colors.black,
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 10,
+  },
+  buttonSpacing: {
+    width: 12,
   },
   modalOverlay: {
     flex: 1,
