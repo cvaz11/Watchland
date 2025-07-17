@@ -1,7 +1,16 @@
 import { Watch, AIAnalysis, IdentificationResult } from '@/types/watch';
 import { watchesDatabase } from '@/mocks/watches-database';
 
-const AI_API_URL = 'https://toolkit.rork.com/text/llm/';
+const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
+const OPENAI_API_KEY = process.env.EXPO_PUBLIC_OPENAI_API_KEY;
+
+interface OpenAIResponse {
+  choices: Array<{
+    message: {
+      content: string;
+    };
+  }>;
+}
 
 export function calculateMatchScore(watch: Watch, aiAnalysis: AIAnalysis): number {
   let score = 0;
@@ -89,8 +98,23 @@ export function searchWatches(query: string): Watch[] {
 }
 
 export async function searchWithAI(query: string): Promise<Watch[]> {
+  if (!OPENAI_API_KEY) {
+    return searchWatches(query);
+  }
+
   try {
-    const prompt = `Analise esta consulta de busca de relógio em linguagem natural e extraia os critérios de busca:
+    const response = await fetch(OPENAI_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${OPENAI_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: 'gpt-4',
+        messages: [
+          {
+            role: 'user',
+            content: `Analise esta consulta de busca de relógio em linguagem natural e extraia os critérios de busca:
 
 Consulta: "${query}"
 
@@ -114,44 +138,36 @@ Responda em JSON:
   "category": "categoria ou deixe vazio",
   "priceMax": número_ou_deixe_vazio,
   "keywords": ["palavra1", "palavra2"]
-}`;
-
-    const response = await fetch(AI_API_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        messages: [
-          {
-            role: 'user',
-            content: prompt,
-          },
+}`
+          }
         ],
+        max_tokens: 300,
+        temperature: 0.1,
       }),
     });
 
     if (!response.ok) {
-      throw new Error(`Erro na API: ${response.status}`);
+      throw new Error(`Erro na API OpenAI: ${response.status}`);
     }
 
-    const data = await response.json();
+    const data: OpenAIResponse = await response.json();
     
     // Try to parse JSON from the completion
     try {
-      const jsonMatch = data.completion.match(/\{[\s\S]*\}/);
+      const completion = data.choices[0].message.content;
+      const jsonMatch = completion.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         const searchCriteria = JSON.parse(jsonMatch[0]);
         return filterWatchesByCriteria(searchCriteria);
       }
     } catch (parseError) {
-      console.warn('Erro ao fazer parse do JSON da busca IA');
+      console.warn('Erro ao fazer parse do JSON da busca OpenAI');
     }
 
     // Fallback to regular search
     return searchWatches(query);
   } catch (error) {
-    console.error('Erro na busca com IA:', error);
+    console.error('Erro na busca com OpenAI:', error);
     // Fallback to regular search
     return searchWatches(query);
   }

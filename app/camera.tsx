@@ -50,7 +50,7 @@ export default function CameraScreen() {
     },
     {
       id: 'processing',
-      title: 'Processando com IA avançada',
+      title: 'Processando com OpenAI GPT-4 Vision',
       status: 'pending',
       description: 'Analisando marca, modelo e características'
     },
@@ -146,11 +146,11 @@ export default function CameraScreen() {
         updateAnalysisStep('quality', 'completed', 'Imagem com boa qualidade para análise');
       }
 
-      // Step 2: AI Analysis
+      // Step 2: OpenAI Analysis
       updateAnalysisStep('processing', 'processing');
       const aiAnalysis = await analyzeWatchImage(compressedBase64);
       setCurrentAnalysis(aiAnalysis);
-      updateAnalysisStep('processing', 'completed', 'Análise de IA concluída com sucesso');
+      updateAnalysisStep('processing', 'completed', 'Análise OpenAI GPT-4 Vision concluída');
       
       // Step 3: Find matches
       updateAnalysisStep('matching', 'processing');
@@ -192,7 +192,7 @@ export default function CameraScreen() {
       
       Alert.alert(
         'Erro na Análise',
-        'Não foi possível analisar a imagem. Verifique sua conexão com a internet.',
+        'Não foi possível analisar a imagem. Verifique sua conexão com a internet e se a chave da OpenAI está configurada.',
         [
           { text: 'Tentar Novamente', onPress: () => analyzeImage(imageUri) },
           { text: 'Cancelar', onPress: resetCamera },
@@ -231,7 +231,7 @@ export default function CameraScreen() {
       <View style={[styles.container, styles.centerContent]}>
         <Text style={styles.permissionTitle}>Acesso à Câmera Necessário</Text>
         <Text style={styles.permissionText}>
-          Precisamos do acesso à câmera para identificar relógios usando IA avançada. 
+          Precisamos do acesso à câmera para identificar relógios usando OpenAI GPT-4 Vision. 
           Por favor, conceda a permissão para continuar.
         </Text>
         <Button
@@ -250,7 +250,7 @@ export default function CameraScreen() {
           <X size={24} color={Colors.white} />
         </Pressable>
         <Text style={styles.headerTitle}>
-          {isAnalyzing ? '🤖 Analisando com IA...' : '📸 Identificar Relógio'}
+          {isAnalyzing ? '🤖 Analisando com OpenAI...' : '📸 Identificar Relógio'}
         </Text>
         <View style={styles.headerPlaceholder} />
       </View>
@@ -274,7 +274,7 @@ export default function CameraScreen() {
                 Posicione o relógio no centro do quadro
               </Text>
               <Text style={styles.frameSubInstruction}>
-                🤖 IA integrada pronta para análise
+                🤖 OpenAI GPT-4 Vision integrado
               </Text>
             </View>
           </CameraView>
@@ -310,10 +310,10 @@ export default function CameraScreen() {
           <View style={styles.instructions}>
             <Text style={styles.instructionsTitle}>🎯 Dicas para melhor identificação:</Text>
             <Text style={styles.instructionsText}>
-              • Posicione o mostrador claramente visível{"\n"}
-              • Garanta boa iluminação sem reflexos{"\n"}
-              • Mantenha a câmera estável{"\n"}
-              • Inclua a marca/logo se possível{"\n"}
+              • Posicione o mostrador claramente visível{'\n'}
+              • Garanta boa iluminação sem reflexos{'\n'}
+              • Mantenha a câmera estável{'\n'}
+              • Inclua a marca/logo se possível{'\n'}
               • Evite sombras sobre o relógio
             </Text>
           </View>
@@ -324,9 +324,9 @@ export default function CameraScreen() {
           
           {isAnalyzing ? (
             <View style={styles.analyzingContainer}>
-              <Text style={styles.analyzingTitle}>🤖 Análise Inteligente em Andamento</Text>
+              <Text style={styles.analyzingTitle}>🤖 Análise OpenAI em Andamento</Text>
               <Text style={styles.analyzingSubtext}>
-                Nossa IA está processando sua imagem com tecnologia avançada
+                GPT-4 Vision está processando sua imagem com tecnologia avançada
               </Text>
               
               <View style={styles.stepsContainer}>

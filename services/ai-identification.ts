@@ -1,7 +1,16 @@
 import { AIAnalysis } from '@/types/watch';
 
-// Use the built-in AI API
-const AI_API_URL = 'https://toolkit.rork.com/text/llm/';
+// OpenAI API configuration
+const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
+const OPENAI_API_KEY = process.env.EXPO_PUBLIC_OPENAI_API_KEY;
+
+interface OpenAIResponse {
+  choices: Array<{
+    message: {
+      content: string;
+    };
+  }>;
+}
 
 interface AIIdentificationResponse {
   brand?: string;
@@ -16,20 +25,26 @@ interface AIIdentificationResponse {
 }
 
 export async function analyzeWatchImage(imageBase64: string): Promise<AIAnalysis> {
-  try {
-    return await analyzeWithProxy(imageBase64);
-  } catch (error) {
-    console.error('Erro na análise:', error);
-    throw new Error(
-      error instanceof Error 
-        ? `Falha na análise: ${error.message}` 
-        : 'Erro desconhecido na análise da imagem'
-    );
+  if (!OPENAI_API_KEY) {
+    throw new Error('Chave da API OpenAI não configurada. Configure EXPO_PUBLIC_OPENAI_API_KEY nas variáveis de ambiente.');
   }
-}
 
-async function analyzeWithProxy(imageBase64: string): Promise<AIAnalysis> {
-  const prompt = `Você é um especialista em relógios de luxo com 20 anos de experiência. Analise esta imagem de relógio com máxima precisão e identifique:
+  try {
+    const response = await fetch(OPENAI_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${OPENAI_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: 'gpt-4-vision-preview',
+        messages: [
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'text',
+                text: `Você é um especialista em relógios de luxo com 20 anos de experiência. Analise esta imagem de relógio com máxima precisão e identifique:
 
 🔍 ANÁLISE DETALHADA OBRIGATÓRIA:
 1. MARCA - Procure logotipos, texto no mostrador, coroa, fecho da pulseira, assinatura
@@ -61,43 +76,44 @@ async function analyzeWithProxy(imageBase64: string): Promise<AIAnalysis> {
   "description": "análise detalhada do que você observa na imagem, incluindo características distintivas, estado de conservação, e qualquer detalhe relevante para identificação. Seja específico sobre por que você chegou a essas conclusões."
 }
 
-IMPORTANTE: Retorne apenas o JSON válido, sem texto adicional antes ou depois.`;
+IMPORTANTE: Retorne apenas o JSON válido, sem texto adicional antes ou depois.`
+              },
+              {
+                type: 'image_url',
+                image_url: {
+                  url: `data:image/jpeg;base64,${imageBase64}`,
+                  detail: 'high'
+                }
+              }
+            ]
+          }
+        ],
+        max_tokens: 1000,
+        temperature: 0.3,
+      }),
+    });
 
-  const response = await fetch(AI_API_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      messages: [
-        {
-          role: 'user',
-          content: [
-            {
-              type: 'text',
-              text: prompt,
-            },
-            {
-              type: 'image',
-              image: imageBase64,
-            },
-          ],
-        },
-      ],
-    }),
-  });
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Erro na API OpenAI: ${response.status} - ${errorText}`);
+    }
 
-  if (!response.ok) {
-    throw new Error(`Erro na API de IA: ${response.status} - ${response.statusText}`);
+    const data: OpenAIResponse = await response.json();
+    
+    if (!data.choices || data.choices.length === 0) {
+      throw new Error('Resposta inválida da API OpenAI');
+    }
+
+    const completion = data.choices[0].message.content;
+    return parseAIResponse(completion);
+  } catch (error) {
+    console.error('Erro na análise com OpenAI:', error);
+    throw new Error(
+      error instanceof Error 
+        ? `Falha na análise: ${error.message}` 
+        : 'Erro desconhecido na análise da imagem'
+    );
   }
-
-  const data = await response.json();
-  
-  if (!data.completion) {
-    throw new Error('Resposta inválida da API de IA');
-  }
-
-  return parseAIResponse(data.completion);
 }
 
 function parseAIResponse(completion: string): AIAnalysis {
@@ -119,7 +135,7 @@ function parseAIResponse(completion: string): AIAnalysis {
       };
     }
   } catch (parseError) {
-    console.warn('Erro ao fazer parse do JSON da IA:', parseError);
+    console.warn('Erro ao fazer parse do JSON da OpenAI:', parseError);
   }
 
   return {
@@ -140,8 +156,30 @@ export async function validateImageQuality(imageBase64: string): Promise<{
   issues: string[];
   suggestions: string[];
 }> {
+  if (!OPENAI_API_KEY) {
+    return {
+      isValid: true,
+      issues: [],
+      suggestions: [],
+    };
+  }
+
   try {
-    const prompt = `Analise a qualidade desta imagem de relógio para identificação automática:
+    const response = await fetch(OPENAI_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${OPENAI_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: 'gpt-4-vision-preview',
+        messages: [
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'text',
+                text: `Analise a qualidade desta imagem de relógio para identificação automática:
 
 Avalie:
 1. NITIDEZ - A imagem está focada?
@@ -156,29 +194,20 @@ Responda em JSON:
   "isValid": true/false,
   "issues": ["lista", "de", "problemas", "encontrados"],
   "suggestions": ["sugestões", "para", "melhorar", "a", "foto"]
-}`;
-
-    const response = await fetch(AI_API_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        messages: [
-          {
-            role: 'user',
-            content: [
-              {
-                type: 'text',
-                text: prompt,
+}`
               },
               {
-                type: 'image',
-                image: imageBase64,
-              },
-            ],
-          },
+                type: 'image_url',
+                image_url: {
+                  url: `data:image/jpeg;base64,${imageBase64}`,
+                  detail: 'low'
+                }
+              }
+            ]
+          }
         ],
+        max_tokens: 300,
+        temperature: 0.1,
       }),
     });
 
@@ -190,15 +219,16 @@ Responda em JSON:
       };
     }
 
-    const data = await response.json();
+    const data: OpenAIResponse = await response.json();
     
     try {
-      const jsonMatch = data.completion.match(/\{[\s\S]*\}/);
+      const completion = data.choices[0].message.content;
+      const jsonMatch = completion.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         return JSON.parse(jsonMatch[0]);
       }
     } catch (parseError) {
-      console.warn('Erro ao validar qualidade da imagem');
+      console.warn('Erro ao validar qualidade da imagem com OpenAI');
     }
 
     return {
@@ -207,7 +237,7 @@ Responda em JSON:
       suggestions: [],
     };
   } catch (error) {
-    console.error('Erro na validação de qualidade:', error);
+    console.error('Erro na validação de qualidade com OpenAI:', error);
     return {
       isValid: true,
       issues: [],
