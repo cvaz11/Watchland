@@ -38,7 +38,8 @@ export default function CameraScreen() {
     setAnalyzing, 
     currentAnalysis, 
     setCurrentAnalysis,
-    addToHistory 
+    addToHistory,
+    settings
   } = useIdentificationStore();
 
   const initializeAnalysisSteps = (): AnalysisStep[] => [
@@ -141,14 +142,13 @@ export default function CameraScreen() {
       const qualityCheck = await validateImageQuality(compressedBase64);
       if (!qualityCheck.isValid && qualityCheck.issues.length > 0) {
         updateAnalysisStep('quality', 'completed', `Qualidade: ${qualityCheck.issues.join(', ')}`);
-        // Continue anyway but warn user
       } else {
         updateAnalysisStep('quality', 'completed', 'Imagem com boa qualidade para análise');
       }
 
       // Step 2: OpenAI Analysis
       updateAnalysisStep('processing', 'processing');
-      const aiAnalysis = await analyzeWatchImage(compressedBase64);
+      const aiAnalysis = await analyzeWatchImage(compressedBase64, settings.precision);
       setCurrentAnalysis(aiAnalysis);
       updateAnalysisStep('processing', 'completed', 'Análise OpenAI GPT-4 Vision concluída');
       
@@ -192,7 +192,7 @@ export default function CameraScreen() {
       
       Alert.alert(
         'Erro na Análise',
-        'Não foi possível analisar a imagem. Verifique sua conexão com a internet e se a chave da OpenAI está configurada.',
+        'Não foi possível analisar a imagem. Verifique sua conexão com a internet e tente novamente.',
         [
           { text: 'Tentar Novamente', onPress: () => analyzeImage(imageUri) },
           { text: 'Cancelar', onPress: resetCamera },
