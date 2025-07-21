@@ -1,6 +1,6 @@
-import { Search, Filter, ArrowLeft, Lightbulb, X, Camera, Sparkles } from 'lucide-react-native';
+import { Search, Filter, ArrowLeft, Lightbulb, X, Camera, Sparkles, Zap } from 'lucide-react-native';
 import React, { useState, useMemo, useEffect } from 'react';
-import { StyleSheet, Text, View, TextInput, FlatList, Pressable, Modal, ScrollView } from 'react-native';
+import { StyleSheet, Text, View, TextInput, FlatList, Pressable, Modal, ScrollView, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 
@@ -8,7 +8,7 @@ import WatchCard from '@/components/WatchCard';
 import Button from '@/components/Button';
 import Colors from '@/constants/colors';
 import { watchesDatabase } from '@/mocks/watches-database';
-import { searchWatches, searchWithAI } from '@/services/watch-matching';
+import { intelligentSearch, getSearchSuggestions } from '@/services/intelligent-search';
 
 const BRANDS = ['Todos', 'Rolex', 'Omega', 'Patek Philippe', 'Audemars Piguet', 'TAG Heuer', 'Breitling', 'IWC', 'Grand Seiko', 'Jaeger-LeCoultre', 'Tissot'];
 const PRICE_RANGES = [
@@ -20,15 +20,16 @@ const PRICE_RANGES = [
 ];
 
 const SEARCH_EXAMPLES = [
-  "tissot prx",
-  "relógio dourado até R$ 10.000",
-  "cronógrafo preto esportivo",
-  "relógio clássico para trabalho",
-  "mergulhador automático",
-  "relógio para presente até R$ 5.000",
-  "cronógrafo vintage italiano",
-  "dress watch suíço dourado",
-  "GMT para viagem profissional",
+  "tissot prx azul",
+  "cronógrafo até R$ 15.000",
+  "rolex submariner preto",
+  "relógio dourado clássico",
+  "omega speedmaster",
+  "mergulhador automático aço",
+  "patek philippe nautilus",
+  "relógio esportivo para trabalho",
+  "dress watch couro marrom",
+  "gmt para viagem profissional",
 ];
 
 export default function CatalogScreen() {
@@ -39,8 +40,10 @@ export default function CatalogScreen() {
   const [selectedPriceRange, setSelectedPriceRange] = useState(PRICE_RANGES[0]);
   const [showFilters, setShowFilters] = useState(false);
   const [showExamples, setShowExamples] = useState(false);
-  const [isSearchingWithAI, setIsSearchingWithAI] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
   const [searchResults, setSearchResults] = useState(watchesDatabase);
+  const [searchSuggestions, setSearchSuggestions] = useState<string[]>([]);
+  const [lastSearchCriteria, setLastSearchCriteria] = useState<any>(null);
 
   const filteredWatches = useMemo(() => {
     let watches = searchResults;
@@ -59,17 +62,43 @@ export default function CatalogScreen() {
     return watches;
   }, [searchResults, selectedBrand, selectedPriceRange]);
 
-  // Auto-search when query changes
+  // Busca inteligente com debounce
   useEffect(() => {
-    const timeoutId = setTimeout(() => {
+    const timeoutId = setTimeout(async () => {
       if (searchQuery.trim()) {
-        handleSmartSearch(searchQuery);
+        setIsSearching(true);
+        try {
+          const result = await intelligentSearch(searchQuery);
+          setSearchResults(result.results);
+          setLastSearchCriteria(result.searchCriteria);
+          
+          if (result.suggestions.length > 0) {
+            setSearchSuggestions(result.suggestions);
+          }
+        } catch (error) {
+          console.error('Erro na busca:', error);
+          setSearchResults(watchesDatabase);
+        } finally {
+          setIsSearching(false);
+        }
       } else {
         setSearchResults(watchesDatabase);
+        setLastSearchCriteria(null);
+        setSearchSuggestions([]);
       }
-    }, 500); // Debounce search
+    }, 800); // Debounce de 800ms para dar tempo da IA processar
 
     return () => clearTimeout(timeoutId);
+  }, [searchQuery]);
+
+  // Atualizar sugestões baseadas na query
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setSearchSuggestions([]);
+    } else {
+      const suggestions = getSearchSuggestions(searchQuery);
+      setSearchSuggestions(suggestions);
+    }
   }, [searchQuery]);
 
   const handleBack = () => {
@@ -85,6 +114,7 @@ export default function CatalogScreen() {
     setSelectedPriceRange(PRICE_RANGES[0]);
     setSearchQuery('');
     setSearchResults(watchesDatabase);
+    setLastSearchCriteria(null);
   };
 
   const handleExamplePress = (example: string) => {
@@ -92,43 +122,41 @@ export default function CatalogScreen() {
     setShowExamples(false);
   };
 
-  const handleSmartSearch = async (query: string) => {
-    if (!query.trim()) {
-      setSearchResults(watchesDatabase);
-      return;
-    }
-    
-    setIsSearchingWithAI(true);
-    try {
-      // First try regular search
-      const regularResults = searchWatches(query);
-      
-      // If we have good results, use them
-      if (regularResults.length > 0) {
-        setSearchResults(regularResults);
-      } else {
-        // Try AI search for better results
-        const aiResults = await searchWithAI(query);
-        setSearchResults(aiResults.length > 0 ? aiResults : regularResults);
-      }
-    } catch (error) {
-      console.error('Erro na busca:', error);
-      // Fallback to regular search
-      const fallbackResults = searchWatches(query);
-      setSearchResults(fallbackResults);
-    } finally {
-      setIsSearchingWithAI(false);
-    }
+  const handleSuggestionPress = (suggestion: string) => {
+    setSearchQuery(suggestion);
   };
 
   const handleCameraPress = () => {
     router.push('/camera');
   };
 
-  const handleAISearch = () => {
-    if (searchQuery.trim()) {
-      handleSmartSearch(searchQuery);
-    }
+  const renderSearchCriteria = () => {
+    if (!lastSearchCriteria) return null;
+
+    const criteria = lastSearchCriteria;
+    const tags = [];
+
+    if (criteria.brand) tags.push(`Marca: ${criteria.brand}`);
+    if (criteria.model) tags.push(`Modelo: ${criteria.model}`);
+    if (criteria.color) tags.push(`Cor: ${criteria.color}`);
+    if (criteria.material) tags.push(`Material: ${criteria.material}`);
+    if (criteria.category) tags.push(`Categoria: ${criteria.category}`);
+    if (criteria.priceMax) tags.push(`Até R$ ${criteria.priceMax.toLocaleString('pt-BR')}`);
+
+    if (tags.length === 0) return null;
+
+    return (
+      <View style={styles.criteriaContainer}>
+        <Text style={styles.criteriaTitle}>🤖 IA entendeu:</Text>
+        <View style={styles.criteriaTagsContainer}>
+          {tags.map((tag, index) => (
+            <View key={index} style={styles.criteriaTag}>
+              <Text style={styles.criteriaTagText}>{tag}</Text>
+            </View>
+          ))}
+        </View>
+      </View>
+    );
   };
 
   return (
@@ -137,7 +165,7 @@ export default function CatalogScreen() {
         <Pressable onPress={handleBack} style={styles.backButton}>
           <ArrowLeft size={24} color={Colors.primary} />
         </Pressable>
-        <Text style={styles.headerTitle}>Catálogo de Relógios</Text>
+        <Text style={styles.headerTitle}>🔍 Busca Inteligente</Text>
         <View style={styles.placeholder} />
       </View>
 
@@ -146,14 +174,14 @@ export default function CatalogScreen() {
           <Search size={20} color={Colors.gray[500]} />
           <TextInput
             style={styles.searchInput}
-            placeholder="Ex: tissot prx, cronógrafo azul..."
+            placeholder="Ex: tissot prx azul, cronógrafo até 15 mil..."
             value={searchQuery}
             onChangeText={setSearchQuery}
             placeholderTextColor={Colors.gray[500]}
           />
-          {isSearchingWithAI ? (
-            <Text style={styles.aiIndicator}>🤖</Text>
-          ) : null}
+          {isSearching && (
+            <ActivityIndicator size="small" color={Colors.primary} />
+          )}
         </View>
         <Pressable onPress={() => setShowExamples(true)} style={styles.examplesButton}>
           <Lightbulb size={20} color={Colors.primary} />
@@ -163,56 +191,79 @@ export default function CatalogScreen() {
         </Pressable>
       </View>
 
+      {/* Sugestões de busca */}
+      {searchSuggestions.length > 0 && (
+        <View style={styles.suggestionsContainer}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            {searchSuggestions.map((suggestion, index) => (
+              <Pressable
+                key={index}
+                style={styles.suggestionChip}
+                onPress={() => handleSuggestionPress(suggestion)}
+              >
+                <Text style={styles.suggestionText}>{suggestion}</Text>
+              </Pressable>
+            ))}
+          </ScrollView>
+        </View>
+      )}
+
+      {renderSearchCriteria()}
+
       {showFilters && (
         <View style={styles.filtersContainer}>
           <View style={styles.filterSection}>
             <Text style={styles.filterTitle}>Marca</Text>
-            <View style={styles.filterOptions}>
-              {BRANDS.map((brand) => (
-                <Pressable
-                  key={brand}
-                  style={[
-                    styles.filterOption,
-                    selectedBrand === brand && styles.filterOptionSelected,
-                  ]}
-                  onPress={() => setSelectedBrand(brand)}
-                >
-                  <Text
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              <View style={styles.filterOptions}>
+                {BRANDS.map((brand) => (
+                  <Pressable
+                    key={brand}
                     style={[
-                      styles.filterOptionText,
-                      selectedBrand === brand && styles.filterOptionTextSelected,
+                      styles.filterOption,
+                      selectedBrand === brand && styles.filterOptionSelected,
                     ]}
+                    onPress={() => setSelectedBrand(brand)}
                   >
-                    {brand}
-                  </Text>
-                </Pressable>
-              ))}
-            </View>
+                    <Text
+                      style={[
+                        styles.filterOptionText,
+                        selectedBrand === brand && styles.filterOptionTextSelected,
+                      ]}
+                    >
+                      {brand}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+            </ScrollView>
           </View>
 
           <View style={styles.filterSection}>
             <Text style={styles.filterTitle}>Faixa de Preço</Text>
-            <View style={styles.filterOptions}>
-              {PRICE_RANGES.map((range) => (
-                <Pressable
-                  key={range.label}
-                  style={[
-                    styles.filterOption,
-                    selectedPriceRange.label === range.label && styles.filterOptionSelected,
-                  ]}
-                  onPress={() => setSelectedPriceRange(range)}
-                >
-                  <Text
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              <View style={styles.filterOptions}>
+                {PRICE_RANGES.map((range) => (
+                  <Pressable
+                    key={range.label}
                     style={[
-                      styles.filterOptionText,
-                      selectedPriceRange.label === range.label && styles.filterOptionTextSelected,
+                      styles.filterOption,
+                      selectedPriceRange.label === range.label && styles.filterOptionSelected,
                     ]}
+                    onPress={() => setSelectedPriceRange(range)}
                   >
-                    {range.label}
-                  </Text>
-                </Pressable>
-              ))}
-            </View>
+                    <Text
+                      style={[
+                        styles.filterOptionText,
+                        selectedPriceRange.label === range.label && styles.filterOptionTextSelected,
+                      ]}
+                    >
+                      {range.label}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+            </ScrollView>
           </View>
 
           <Pressable onPress={clearFilters} style={styles.clearFiltersButton}>
@@ -223,13 +274,13 @@ export default function CatalogScreen() {
 
       <View style={styles.resultsHeader}>
         <Text style={styles.resultsCount}>
-          {filteredWatches.length} relógio{filteredWatches.length !== 1 ? 's' : ''} encontrado{filteredWatches.length !== 1 ? 's' : ''}
+          {isSearching ? '🤖 Buscando...' : `${filteredWatches.length} relógio${filteredWatches.length !== 1 ? 's' : ''} encontrado${filteredWatches.length !== 1 ? 's' : ''}`}
         </Text>
-        {searchQuery ? (
+        {searchQuery && !isSearching && (
           <Text style={styles.searchHint}>
-            {isSearchingWithAI ? '🤖 Buscando com IA...' : 'Use linguagem natural: tissot prx, cronógrafo azul'}
+            {lastSearchCriteria ? '✨ Busca inteligente ativada' : '💡 Use linguagem natural para melhores resultados'}
           </Text>
-        ) : null}
+        )}
       </View>
 
       <FlatList
@@ -238,26 +289,25 @@ export default function CatalogScreen() {
         renderItem={({ item }) => <WatchCard watch={item} showRarity />}
         contentContainerStyle={[
           styles.listContent,
-          { paddingBottom: insets.bottom + 100 }, // Extra space for fixed buttons
+          { paddingBottom: insets.bottom + 100 },
         ]}
         showsVerticalScrollIndicator={false}
         numColumns={1}
       />
 
-      {/* Fixed bottom buttons */}
+      {/* Botões fixos */}
       <View style={[styles.fixedButtons, { paddingBottom: insets.bottom + 20 }]}>
         <Button
-          title="🤖 Busca Inteligente"
-          onPress={handleAISearch}
+          title="🤖 Busca IA"
+          onPress={() => {}}
           variant="secondary"
           size="medium"
-          icon={<Sparkles size={18} color={Colors.primary} />}
-          disabled={!searchQuery.trim() || isSearchingWithAI}
-          loading={isSearchingWithAI}
+          icon={<Zap size={18} color={Colors.primary} />}
+          disabled={!searchQuery.trim() || isSearching}
         />
         <View style={styles.buttonSpacing} />
         <Button
-          title="📸 Identificar por Foto"
+          title="📸 Identificar"
           onPress={handleCameraPress}
           variant="primary"
           size="medium"
@@ -274,7 +324,7 @@ export default function CatalogScreen() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Exemplos de Busca</Text>
+              <Text style={styles.modalTitle}>💡 Exemplos de Busca Inteligente</Text>
               <Pressable onPress={() => setShowExamples(false)} style={styles.modalCloseButton}>
                 <X size={24} color={Colors.gray[600]} />
               </Pressable>
@@ -282,7 +332,7 @@ export default function CatalogScreen() {
             
             <ScrollView style={styles.modalBody}>
               <Text style={styles.modalDescription}>
-                Use linguagem natural para encontrar o relógio perfeito:
+                Use linguagem natural! Nossa IA entende o que você quer:
               </Text>
               
               {SEARCH_EXAMPLES.map((example, index) => (
@@ -292,17 +342,18 @@ export default function CatalogScreen() {
                   onPress={() => handleExamplePress(example)}
                 >
                   <Text style={styles.exampleText}>{example}</Text>
+                  <Sparkles size={16} color={Colors.primary} />
                 </Pressable>
               ))}
               
               <View style={styles.modalTip}>
-                <Text style={styles.tipTitle}>🤖 Dicas para busca com IA:</Text>
+                <Text style={styles.tipTitle}>🤖 Como funciona a busca inteligente:</Text>
                 <Text style={styles.tipText}>
-                  {`• Mencione marca e modelo: "tissot prx"
-• Inclua cor: "relógio preto", "mostrador azul"
-• Especifique faixa de preço: "até R$ 10.000"
-• Descreva o estilo: "esportivo", "clássico", "vintage"
-• Mencione uso: "para trabalho", "mergulho", "viagem"`}
+                  {`• Entende linguagem natural: "cronógrafo azul até 15 mil"
+• Converte preços automaticamente para Reais
+• Encontra relógios similares mesmo sem nome exato
+• Ordena por relevância usando IA
+• Funciona offline como fallback`}
                 </Text>
               </View>
             </ScrollView>
@@ -369,10 +420,6 @@ const styles = StyleSheet.create({
     color: Colors.text,
     marginLeft: 12,
   },
-  aiIndicator: {
-    fontSize: 16,
-    marginLeft: 8,
-  },
   examplesButton: {
     width: 44,
     height: 44,
@@ -389,6 +436,53 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.gray[100],
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  suggestionsContainer: {
+    backgroundColor: Colors.white,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.gray[200],
+  },
+  suggestionChip: {
+    backgroundColor: Colors.primary + '20',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    marginRight: 8,
+  },
+  suggestionText: {
+    fontSize: 14,
+    color: Colors.primary,
+    fontWeight: '500',
+  },
+  criteriaContainer: {
+    backgroundColor: Colors.accent + '10',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.gray[200],
+  },
+  criteriaTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: Colors.text,
+    marginBottom: 8,
+  },
+  criteriaTagsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  criteriaTag: {
+    backgroundColor: Colors.accent,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  criteriaTagText: {
+    fontSize: 12,
+    color: Colors.white,
+    fontWeight: '600',
   },
   filtersContainer: {
     backgroundColor: Colors.white,
@@ -407,7 +501,6 @@ const styles = StyleSheet.create({
   },
   filterOptions: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
     gap: 8,
   },
   filterOption: {
@@ -496,6 +589,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
     color: Colors.text,
+    flex: 1,
   },
   modalCloseButton: {
     width: 32,
@@ -519,11 +613,15 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 12,
     marginBottom: 12,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   exampleText: {
     fontSize: 16,
     color: Colors.primary,
     fontWeight: '500',
+    flex: 1,
   },
   modalTip: {
     backgroundColor: Colors.accent + '20',
