@@ -151,9 +151,9 @@ export default function CatalogScreen() {
             onChangeText={setSearchQuery}
             placeholderTextColor={Colors.gray[500]}
           />
-          {isSearchingWithAI && (
+          {isSearchingWithAI ? (
             <Text style={styles.aiIndicator}>🤖</Text>
-          )}
+          ) : null}
         </View>
         <Pressable onPress={() => setShowExamples(true)} style={styles.examplesButton}>
           <Lightbulb size={20} color={Colors.primary} />
@@ -225,11 +225,11 @@ export default function CatalogScreen() {
         <Text style={styles.resultsCount}>
           {filteredWatches.length} relógio{filteredWatches.length !== 1 ? 's' : ''} encontrado{filteredWatches.length !== 1 ? 's' : ''}
         </Text>
-        {searchQuery && (
+        {searchQuery ? (
           <Text style={styles.searchHint}>
             {isSearchingWithAI ? '🤖 Buscando com IA...' : 'Use linguagem natural: tissot prx, cronógrafo azul'}
           </Text>
-        )}
+        ) : null}
       </View>
 
       <FlatList
@@ -298,11 +298,11 @@ export default function CatalogScreen() {
               <View style={styles.modalTip}>
                 <Text style={styles.tipTitle}>🤖 Dicas para busca com IA:</Text>
                 <Text style={styles.tipText}>
-                  • Mencione marca e modelo: "tissot prx"{'\n'}
-                  • Inclua cor: "relógio preto", "mostrador azul"{'\n'}
-                  • Especifique faixa de preço: "até R$ 10.000"{'\n'}
-                  • Descreva o estilo: "esportivo", "clássico", "vintage"{'\n'}
-                  • Mencione uso: "para trabalho", "mergulho", "viagem"
+                  {`• Mencione marca e modelo: "tissot prx"
+• Inclua cor: "relógio preto", "mostrador azul"
+• Especifique faixa de preço: "até R$ 10.000"
+• Descreva o estilo: "esportivo", "clássico", "vintage"
+• Mencione uso: "para trabalho", "mergulho", "viagem"`}
                 </Text>
               </View>
             </ScrollView>
